@@ -3,6 +3,8 @@ ingressRoute:
     enabled: true
     entryPoints:
       - web
+      - websecure
+    matchRule: Host(`traefik.local.dev`)
 
 ports:
   web:

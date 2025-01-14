@@ -9,7 +9,7 @@ metadata:
   name: bind9
   namespace: bind9
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: bind9
