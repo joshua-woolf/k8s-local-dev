@@ -1,0 +1,14 @@
+ingressRoute:
+  dashboard:
+    enabled: true
+    entryPoints:
+      - web
+
+ports:
+  web:
+    nodePort: 30080
+  websecure:
+    nodePort: 30443
+
+service:
+  type: NodePort
