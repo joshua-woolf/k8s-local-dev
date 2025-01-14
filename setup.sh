@@ -15,6 +15,7 @@ kubectl apply -f ./dns/dns.yaml
 
 ## Helm Repos
 
+helm repo add flagger https://flagger.app
 helm repo add podinfo https://stefanprodan.github.io/podinfo
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add traefik https://traefik.github.io/charts
@@ -59,3 +60,19 @@ echo -n "Password: "
 kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
 
 echo "Prometheus is running on http://prometheus.local.dev"
+
+## Flagger
+
+helm upgrade flagger flagger/flagger \
+  --create-namespace \
+  --install \
+  --namespace flagger \
+  --values "./values/flagger-values.yaml" \
+  --wait
+
+helm upgrade flagger-loadtester flagger/loadtester \
+  --create-namespace \
+  --install \
+  --namespace flagger \
+  --values "./values/flagger-loadtester-values.yaml" \
+  --wait
