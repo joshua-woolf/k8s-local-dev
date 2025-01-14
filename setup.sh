@@ -15,3 +15,15 @@ helm upgrade traefik traefik/traefik \
   --namespace traefik \
   --values "./values/traefik-values.yaml" \
   --wait
+
+## Podinfo
+
+helm repo add podinfo https://stefanprodan.github.io/podinfo
+helm repo update
+
+helm upgrade podinfo podinfo/podinfo \
+  --create-namespace \
+  --install \
+  --namespace demo \
+  --values "./values/podinfo-values.yaml" \
+  --wait

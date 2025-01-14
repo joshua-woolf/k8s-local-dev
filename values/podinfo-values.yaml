@@ -1,0 +1,9 @@
+replicaCount: 1
+ingress:
+  enabled: true
+  className: traefik
+  hosts:
+    - host: podinfo.local.dev
+      paths:
+        - path: /
+          pathType: Prefix
