@@ -1,4 +1,3 @@
-otel
 elastic stack
 external dns
 flux

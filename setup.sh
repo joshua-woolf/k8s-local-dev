@@ -16,11 +16,12 @@ kubectl apply -f ./dns/dns.yaml
 ## Helm Repos
 
 helm repo add flagger https://flagger.app
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 helm repo add podinfo https://stefanprodan.github.io/podinfo
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add traefik https://traefik.github.io/charts
 
-helm repo update
+helm repo update flagger open-telemetry podinfo prometheus-community traefik
 
 ## Traefik
 
@@ -60,6 +61,15 @@ echo -n "Password: "
 kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
 
 echo "Prometheus is running on http://prometheus.local.dev"
+
+## OpenTelemetry Collector
+
+helm upgrade otel-collector open-telemetry/opentelemetry-collector \
+  --create-namespace \
+  --install \
+  --namespace monitoring \
+  --values "./values/otel-collector-values.yaml" \
+  --wait
 
 ## Flagger
 
