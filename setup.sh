@@ -6,24 +6,25 @@ echo "Container Registry is running on http://localhost:5000"
 
 kind create cluster --config kind-config.yaml
 
-## Bind9
+# Bind9
 
 docker build -t localhost:5000/bind9:latest ./dns/
 docker push localhost:5000/bind9:latest
 
 kubectl apply -f ./dns/dns.yaml
 
-## Helm Repos
+# Helm Repos
 
+helm repo add elastic https://helm.elastic.co
 helm repo add flagger https://flagger.app
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 helm repo add podinfo https://stefanprodan.github.io/podinfo
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add traefik https://traefik.github.io/charts
 
-helm repo update flagger open-telemetry podinfo prometheus-community traefik
+helm repo update elastic flagger open-telemetry podinfo prometheus-community traefik
 
-## Traefik
+# Traefik
 
 helm upgrade traefik traefik/traefik \
   --create-namespace \
@@ -34,7 +35,7 @@ helm upgrade traefik traefik/traefik \
 
 echo "Traefik Dashboard is running on http://traefik.local.dev"
 
-## PodInfo
+# PodInfo
 
 helm upgrade podinfo podinfo/podinfo \
   --create-namespace \
@@ -45,7 +46,7 @@ helm upgrade podinfo podinfo/podinfo \
 
 echo "PodInfo is running on http://podinfo.local.dev"
 
-## Prometheus Stack
+# Prometheus Stack
 
 helm upgrade kube-prometheus prometheus-community/kube-prometheus-stack \
   --create-namespace \
@@ -62,7 +63,7 @@ kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{
 
 echo "Prometheus is running on http://prometheus.local.dev"
 
-## OpenTelemetry Collector
+# OpenTelemetry Collector
 
 helm upgrade otel-collector open-telemetry/opentelemetry-collector \
   --create-namespace \
@@ -85,4 +86,13 @@ helm upgrade flagger-loadtester flagger/loadtester \
   --install \
   --namespace flagger \
   --values "./values/flagger-loadtester-values.yaml" \
+  --wait
+
+# Elastic Stack
+
+helm upgrade elastic-operator elastic/eck-operator \
+  --create-namespace \
+  --install \
+  --namespace elastic-system \
+  --values "./values/elastic-operator-values.yaml" \
   --wait
