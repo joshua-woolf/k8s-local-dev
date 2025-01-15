@@ -97,6 +97,4 @@ helm upgrade elastic-operator elastic/eck-operator \
   --values "./values/elastic-operator-values.yaml" \
   --wait
 
-# https://github.com/elastic/elasticsearch/issues/118583
-
-# kubectl apply -f ./elastic/elastic.yaml
+kubectl apply -f ./elastic/elastic.yaml

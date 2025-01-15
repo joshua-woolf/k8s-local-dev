@@ -64,6 +64,15 @@ spec:
     count: 1
     config:
       node.store.allow_mmap: false
+    podTemplate:
+      spec:
+        containers:
+        - name: elasticsearch
+          env:
+          - name: ES_JAVA_OPTS
+            value: -XX:UseSVE=0
+          - name: CLI_JAVA_OPTS
+            value: -XX:UseSVE=0
 ---
 apiVersion: agent.k8s.elastic.co/v1alpha1
 kind: Agent
