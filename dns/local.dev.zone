@@ -8,5 +8,4 @@ $TTL    86400
 )
 @       IN      NS      ns.local.dev.
 @       IN      A       127.0.0.1
-*       IN      A       127.0.0.1
 ns      IN      A       127.0.0.1

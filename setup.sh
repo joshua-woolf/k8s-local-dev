@@ -13,6 +13,9 @@ docker push localhost:5000/bind9:latest
 
 kubectl apply -f ./dns/dns.yaml
 
+# ExternalDNS
+kubectl apply -f ./dns/externaldns.yaml
+
 # Helm Repos
 
 helm repo add elastic https://helm.elastic.co
