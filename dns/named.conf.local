@@ -5,7 +5,7 @@ key "externaldns-key" {
 
 zone "local.dev" {
     type master;
-    file "/etc/bind/zones/local.dev.zone";
+    file "/var/cache/bind/local.dev.zone";
     allow-transfer { key externaldns-key; };
     update-policy {
         grant externaldns-key zonesub ANY;

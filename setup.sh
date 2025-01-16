@@ -13,9 +13,6 @@ docker push localhost:5000/bind9:latest
 
 kubectl apply -f ./dns/dns.yaml
 
-# ExternalDNS
-kubectl apply -f ./dns/externaldns.yaml
-
 # Helm Repos
 
 helm repo add elastic https://helm.elastic.co
@@ -26,6 +23,10 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo add traefik https://traefik.github.io/charts
 
 helm repo update elastic flagger open-telemetry podinfo prometheus-community traefik
+
+# ExternalDNS
+
+kubectl apply -f ./dns/external-dns.yaml
 
 # Traefik
 

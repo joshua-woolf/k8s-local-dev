@@ -10,6 +10,9 @@ nodes:
     - containerPort: 30053
       hostPort: 53
       protocol: UDP
+    - containerPort: 30053
+      hostPort: 53
+      protocol: TCP
 - role: worker
 - role: worker
 - role: worker

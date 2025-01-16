@@ -24,6 +24,10 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 53
+          name: dns-tcp
+          protocol: TCP
+        - containerPort: 53
+          name: dns-udp
           protocol: UDP
 ---
 apiVersion: v1
@@ -32,11 +36,36 @@ metadata:
   name: bind9
   namespace: bind9
 spec:
+  type: ClusterIP
+  ports:
+    - name: dns-udp
+      protocol: UDP
+      port: 53
+      targetPort: 53
+    - name: dns-tcp
+      protocol: TCP
+      port: 53
+      targetPort: 53
+  selector:
+    app: bind9
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bind9-public
+  namespace: bind9
+spec:
   type: NodePort
   ports:
-  - port: 53
+  - name: dns-udp
+    port: 53
     targetPort: 53
     protocol: UDP
+    nodePort: 30053
+  - name: dns-tcp
+    port: 53
+    targetPort: 53
+    protocol: TCP
     nodePort: 30053
   selector:
     app: bind9
