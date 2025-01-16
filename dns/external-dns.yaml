@@ -97,3 +97,4 @@ spec:
         - --source=traefik-proxy
         - --domain-filter=local.dev
         - --traefik-disable-legacy
+        - --interval=15s

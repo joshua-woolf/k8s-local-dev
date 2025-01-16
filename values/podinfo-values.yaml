@@ -1,5 +1,7 @@
 replicaCount: 1
 ingress:
+  annotations:
+    external-dns.alpha.kubernetes.io/target: local.dev
   enabled: true
   className: traefik
   hosts:

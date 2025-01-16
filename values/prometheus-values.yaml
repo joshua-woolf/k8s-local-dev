@@ -1,5 +1,7 @@
 grafana:
   ingress:
+    annotations:
+      external-dns.alpha.kubernetes.io/target: local.dev
     enabled: true
     ingressClassName: traefik
     hosts:
@@ -8,6 +10,8 @@ grafana:
 
 prometheus:
   ingress:
+    annotations:
+      external-dns.alpha.kubernetes.io/target: local.dev
     enabled: true
     ingressClassName: traefik
     hosts:
