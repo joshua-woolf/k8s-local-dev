@@ -17,12 +17,22 @@ kubectl apply -f ./dns/dns.yaml
 
 helm repo add elastic https://helm.elastic.co
 helm repo add flagger https://flagger.app
+helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 helm repo add podinfo https://stefanprodan.github.io/podinfo
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add traefik https://traefik.github.io/charts
 
-helm repo update elastic flagger open-telemetry podinfo prometheus-community traefik
+helm repo update elastic flagger metrics-server open-telemetry podinfo prometheus-community traefik
+
+# Metrics Server
+
+helm upgrade metrics-server metrics-server/metrics-server \
+  --create-namespace \
+  --install \
+  --namespace monitoring \
+  --values "./values/metrics-server-values.yaml" \
+  --wait
 
 # ExternalDNS
 

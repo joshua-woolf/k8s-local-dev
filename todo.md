@@ -6,4 +6,3 @@ registry ui
 service mesh
 gatekeeper
 cert manager
-metrics server
