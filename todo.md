@@ -5,4 +5,3 @@ custom apps
 registry ui
 service mesh
 gatekeeper
-cert manager

@@ -1,0 +1,9 @@
+installCRDs: true
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: false
+webhook:
+  hostNetwork: false
+  securePort: 10250
+  timeoutSeconds: 30

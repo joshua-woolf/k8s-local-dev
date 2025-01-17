@@ -22,8 +22,24 @@ helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm
 helm repo add podinfo https://stefanprodan.github.io/podinfo
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add traefik https://traefik.github.io/charts
+helm repo add jetstack https://charts.jetstack.io
 
-helm repo update elastic flagger metrics-server open-telemetry podinfo prometheus-community traefik
+helm repo update elastic flagger metrics-server open-telemetry podinfo prometheus-community traefik jetstack
+
+# Generate CA and trust it
+chmod +x ./certs/generate-ca.sh
+./certs/generate-ca.sh
+
+# Install cert-manager
+helm upgrade cert-manager jetstack/cert-manager \
+  --create-namespace \
+  --install \
+  --namespace cert-manager \
+  --values "./certs/cert-manager.yaml" \
+  --wait
+
+# Configure cert-manager with our CA
+kubectl apply -f ./certs/ca/cluster-issuer.yaml
 
 # Metrics Server
 
@@ -112,3 +128,5 @@ helm upgrade elastic-operator elastic/eck-operator \
   --wait
 
 kubectl apply -f ./elastic/elastic.yaml
+
+# sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
