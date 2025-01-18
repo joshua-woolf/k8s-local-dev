@@ -16,7 +16,7 @@ helm repo update elastic flagger jetstack metrics-server open-telemetry podinfo 
 # Trusted Root CA Certificate
 if ! security find-certificate -c "Local Dev Root" /Library/Keychains/System.keychain >/dev/null 2>&1; then
   echo "Installing Root CA to System Keychain..."
-  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "./certs/ca/ca.crt"
+  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "./certs/ca.crt"
 fi
 
 # Cluster
@@ -38,7 +38,7 @@ helm upgrade cert-manager jetstack/cert-manager \
   --values "./values/cert-manager-values.yaml" \
   --wait
 
-kubectl apply -f ./certs/ca/cluster-issuer.yaml
+kubectl apply -f ./certs/cluster-issuer.yaml
 
 # DNS
 kubectl apply -f ./dns/dns.yaml
@@ -123,5 +123,3 @@ helm upgrade podinfo podinfo/podinfo \
   --wait
 
 echo "PodInfo is running on http://podinfo.local.dev"
-
-# sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
