@@ -35,7 +35,7 @@ helm upgrade cert-manager jetstack/cert-manager \
   --create-namespace \
   --install \
   --namespace cert-manager \
-  --values "./certs/cert-manager.yaml" \
+  --values "./values/cert-manager-values.yaml" \
   --wait
 
 kubectl apply -f ./certs/ca/cluster-issuer.yaml
@@ -53,6 +53,8 @@ helm upgrade registry twuni/docker-registry \
   --wait
 
 # Traefik
+kubectl apply -f ./traefik/certificate.yaml
+
 helm upgrade traefik traefik/traefik \
   --create-namespace \
   --install \
@@ -71,6 +73,7 @@ helm upgrade kube-prometheus prometheus-community/kube-prometheus-stack \
   --wait
 
 echo "Grafana is running on http://grafana.local.dev"
+
 echo -n "Username: "
 kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-user}" | base64 --decode ; echo
 echo -n "Password: "

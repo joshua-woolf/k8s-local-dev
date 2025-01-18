@@ -7,6 +7,5 @@ service mesh
 gatekeeper
 cloud provider
 
-fix traefik certs
 fix all warnings and errors in pods
 test registry
