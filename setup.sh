@@ -7,10 +7,6 @@ echo "Container Registry is running on http://localhost:5000"
 kind create cluster --config kind-config.yaml
 
 # Bind9
-
-docker build -t localhost:5000/bind9:latest ./dns/
-docker push localhost:5000/bind9:latest
-
 kubectl apply -f ./dns/dns.yaml
 
 # Helm Repos
@@ -23,8 +19,9 @@ helm repo add podinfo https://stefanprodan.github.io/podinfo
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add traefik https://traefik.github.io/charts
 helm repo add jetstack https://charts.jetstack.io
+helm repo add twuni https://helm.twun.io
 
-helm repo update elastic flagger metrics-server open-telemetry podinfo prometheus-community traefik jetstack
+helm repo update elastic flagger metrics-server open-telemetry podinfo prometheus-community traefik jetstack twuni
 
 # Generate CA and trust it
 chmod +x ./certs/generate-ca.sh
@@ -40,6 +37,13 @@ helm upgrade cert-manager jetstack/cert-manager \
 
 # Configure cert-manager with our CA
 kubectl apply -f ./certs/ca/cluster-issuer.yaml
+
+helm upgrade registry twuni/docker-registry \
+  --create-namespace \
+  --install \
+  --namespace registry \
+  --values "./values/registry-values.yaml" \
+  --wait
 
 # Metrics Server
 

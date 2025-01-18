@@ -1,15 +1,8 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: external-dns
-  labels:
-    name: external-dns
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: external-dns
-  namespace: external-dns
+  namespace: dns
 rules:
 - apiGroups:
   - ""
@@ -46,13 +39,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: external-dns
-  namespace: external-dns
+  namespace: dns
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: external-dns-viewer
-  namespace: external-dns
+  namespace: dns
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -60,13 +53,13 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: external-dns
-  namespace: external-dns
+  namespace: dns
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: external-dns
-  namespace: external-dns
+  namespace: dns
 spec:
   selector:
     matchLabels:
@@ -85,7 +78,7 @@ spec:
         - --txt-prefix=external-dns-
         - --txt-owner-id=k8s
         - --provider=rfc2136
-        - --rfc2136-host=bind9.bind9.svc.cluster.local
+        - --rfc2136-host=bind9
         - --rfc2136-port=53
         - --rfc2136-zone=local.dev
         - --rfc2136-tsig-secret=0Z/s3fhefz8Kq3xHNOYaiEvBHsdxEsRMyEx29b5SBLY=

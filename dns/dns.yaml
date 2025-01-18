@@ -1,71 +1,117 @@
 apiVersion: v1
 kind: Namespace
 metadata:
+  name: dns
+  labels:
+    name: external-dns
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: bind9
+  namespace: dns
+data:
+  named.conf.options: |
+    options {
+      directory "/var/cache/bind";
+      forwarders {
+        8.8.8.8;
+        8.8.4.4;
+      };
+      forward only;
+      listen-on { any; };
+      allow-query { any; };
+      dnssec-validation auto;
+    };
+
+
+  named.conf.local: |
+    key "externaldns-key" {
+        algorithm hmac-sha256;
+        secret "0Z/s3fhefz8Kq3xHNOYaiEvBHsdxEsRMyEx29b5SBLY=";
+    };
+
+    zone "local.dev" {
+        type master;
+        file "/var/cache/bind/local.dev.zone";
+        allow-transfer { key externaldns-key; };
+        update-policy {
+            grant externaldns-key zonesub ANY;
+        };
+    };
+
+
+  local.dev.zone: |
+    $TTL    86400
+    @       IN      SOA     local.dev. root.local.dev. (
+                            2023111001      ; Serial
+                            3600            ; Refresh
+                            1800            ; Retry
+                            604800          ; Expire
+                            86400           ; Minimum TTL
+    )
+    @       IN      NS      ns.local.dev.
+    @       IN      A       127.0.0.1
+    ns      IN      A       127.0.0.1
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: bind9
-  namespace: bind9
+  namespace: dns
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: bind9
+      app.kubernetes.io/name: bind9
   template:
     metadata:
       labels:
-        app: bind9
+        app.kubernetes.io/name: bind9
     spec:
       containers:
-      - name: bind9
-        image: localhost:5000/bind9:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 53
-          name: dns-tcp
-          protocol: TCP
-        - containerPort: 53
-          name: dns-udp
-          protocol: UDP
+        - name: bind9
+          image: "ubuntu/bind9:latest"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: dns-tcp
+              containerPort: 53
+              protocol: TCP
+            - name: dns-udp
+              containerPort: 53
+              protocol: UDP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/bind/named.conf.options
+              subPath: named.conf.options
+            - name: config
+              mountPath: /etc/bind/named.conf.local
+              subPath: named.conf.local
+            - name: config
+              mountPath: /var/cache/bind/local.dev.zone
+              subPath: local.dev.zone
+      volumes:
+        - name: config
+          configMap:
+            name: bind9
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: bind9
-  namespace: bind9
+  namespace: dns
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
     - name: dns-udp
       protocol: UDP
       port: 53
       targetPort: 53
+      nodePort: 30053
     - name: dns-tcp
       protocol: TCP
       port: 53
       targetPort: 53
+      nodePort: 30053
   selector:
-    app: bind9
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: bind9-public
-  namespace: bind9
-spec:
-  type: NodePort
-  ports:
-  - name: dns-udp
-    port: 53
-    targetPort: 53
-    protocol: UDP
-    nodePort: 30053
-  - name: dns-tcp
-    port: 53
-    targetPort: 53
-    protocol: TCP
-    nodePort: 30053
-  selector:
-    app: bind9
+    app.kubernetes.io/name: bind9
