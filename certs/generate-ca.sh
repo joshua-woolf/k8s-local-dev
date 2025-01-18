@@ -16,8 +16,13 @@ fi
 
 # Trust the CA on macOS
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  echo "Installing Root CA to System Keychain..."
-  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "$CA_DIR/ca.crt"
+  # Check if certificate is already trusted
+  if ! security find-certificate -c "Local Dev Root" /Library/Keychains/System.keychain >/dev/null 2>&1; then
+    echo "Installing Root CA to System Keychain..."
+    sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "$CA_DIR/ca.crt"
+  else
+    echo "Root CA is already trusted"
+  fi
 fi
 
 # sudo security delete-certificate -c "Local Dev Root" /Library/Keychains/System.keychain

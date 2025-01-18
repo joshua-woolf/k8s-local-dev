@@ -1,52 +1,28 @@
 #!/bin/bash
 
-docker run -d --restart=always -p 5000:5000 --name registry --network kind registry:2
-
-echo "Container Registry is running on http://localhost:5000"
-
-kind create cluster --config kind-config.yaml
-
-# Bind9
-kubectl apply -f ./dns/dns.yaml
-
 # Helm Repos
-
 helm repo add elastic https://helm.elastic.co
 helm repo add flagger https://flagger.app
+helm repo add jetstack https://charts.jetstack.io
 helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 helm repo add podinfo https://stefanprodan.github.io/podinfo
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add traefik https://traefik.github.io/charts
-helm repo add jetstack https://charts.jetstack.io
 helm repo add twuni https://helm.twun.io
 
-helm repo update elastic flagger metrics-server open-telemetry podinfo prometheus-community traefik jetstack twuni
+helm repo update elastic flagger jetstack metrics-server open-telemetry podinfo prometheus-community traefik twuni
 
-# Generate CA and trust it
-chmod +x ./certs/generate-ca.sh
-./certs/generate-ca.sh
+# Trusted Root CA Certificate
+if ! security find-certificate -c "Local Dev Root" /Library/Keychains/System.keychain >/dev/null 2>&1; then
+  echo "Installing Root CA to System Keychain..."
+  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "./certs/ca/ca.crt"
+fi
 
-# Install cert-manager
-helm upgrade cert-manager jetstack/cert-manager \
-  --create-namespace \
-  --install \
-  --namespace cert-manager \
-  --values "./certs/cert-manager.yaml" \
-  --wait
-
-# Configure cert-manager with our CA
-kubectl apply -f ./certs/ca/cluster-issuer.yaml
-
-helm upgrade registry twuni/docker-registry \
-  --create-namespace \
-  --install \
-  --namespace registry \
-  --values "./values/registry-values.yaml" \
-  --wait
+# Cluster
+kind create cluster --config kind-config.yaml
 
 # Metrics Server
-
 helm upgrade metrics-server metrics-server/metrics-server \
   --create-namespace \
   --install \
@@ -54,12 +30,29 @@ helm upgrade metrics-server metrics-server/metrics-server \
   --values "./values/metrics-server-values.yaml" \
   --wait
 
-# ExternalDNS
+# Cert Manager
+helm upgrade cert-manager jetstack/cert-manager \
+  --create-namespace \
+  --install \
+  --namespace cert-manager \
+  --values "./certs/cert-manager.yaml" \
+  --wait
 
+kubectl apply -f ./certs/ca/cluster-issuer.yaml
+
+# DNS
+kubectl apply -f ./dns/dns.yaml
 kubectl apply -f ./dns/external-dns.yaml
 
-# Traefik
+# Container Registry
+helm upgrade registry twuni/docker-registry \
+  --create-namespace \
+  --install \
+  --namespace registry \
+  --values "./values/registry-values.yaml" \
+  --wait
 
+# Traefik
 helm upgrade traefik traefik/traefik \
   --create-namespace \
   --install \
@@ -69,19 +62,7 @@ helm upgrade traefik traefik/traefik \
 
 echo "Traefik Dashboard is running on http://traefik.local.dev"
 
-# PodInfo
-
-helm upgrade podinfo podinfo/podinfo \
-  --create-namespace \
-  --install \
-  --namespace podinfo \
-  --values "./values/podinfo-values.yaml" \
-  --wait
-
-echo "PodInfo is running on http://podinfo.local.dev"
-
 # Prometheus Stack
-
 helm upgrade kube-prometheus prometheus-community/kube-prometheus-stack \
   --create-namespace \
   --install \
@@ -98,7 +79,6 @@ kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{
 echo "Prometheus is running on http://prometheus.local.dev"
 
 # OpenTelemetry Collector
-
 helm upgrade otel-collector open-telemetry/opentelemetry-collector \
   --create-namespace \
   --install \
@@ -107,7 +87,6 @@ helm upgrade otel-collector open-telemetry/opentelemetry-collector \
   --wait
 
 ## Flagger
-
 helm upgrade flagger flagger/flagger \
   --create-namespace \
   --install \
@@ -123,7 +102,6 @@ helm upgrade flagger-loadtester flagger/loadtester \
   --wait
 
 # Elastic Stack
-
 helm upgrade elastic-operator elastic/eck-operator \
   --create-namespace \
   --install \
@@ -132,5 +110,15 @@ helm upgrade elastic-operator elastic/eck-operator \
   --wait
 
 kubectl apply -f ./elastic/elastic.yaml
+
+# PodInfo
+helm upgrade podinfo podinfo/podinfo \
+  --create-namespace \
+  --install \
+  --namespace podinfo \
+  --values "./values/podinfo-values.yaml" \
+  --wait
+
+echo "PodInfo is running on http://podinfo.local.dev"
 
 # sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
