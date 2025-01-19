@@ -4,6 +4,7 @@
 helm repo add elastic https://helm.elastic.co
 helm repo add flagger https://flagger.app
 helm repo add jetstack https://charts.jetstack.io
+helm repo add joxit https://helm.joxit.dev
 helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 helm repo add podinfo https://stefanprodan.github.io/podinfo
@@ -11,7 +12,7 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo add traefik https://traefik.github.io/charts
 helm repo add twuni https://helm.twun.io
 
-helm repo update elastic flagger jetstack metrics-server open-telemetry podinfo prometheus-community traefik twuni
+helm repo update elastic flagger jetstack joxit metrics-server open-telemetry podinfo prometheus-community traefik twuni
 
 # Trusted Root CA Certificate
 if ! security find-certificate -c "Local Dev Root" /Library/Keychains/System.keychain >/dev/null 2>&1; then
@@ -20,7 +21,11 @@ if ! security find-certificate -c "Local Dev Root" /Library/Keychains/System.key
 fi
 
 # Cluster
-kind create cluster --config kind-config.yaml
+if ! kind get clusters | grep -q "^kind$"; then
+  kind create cluster --config kind-config.yaml
+else
+  echo "Cluster 'kind' already exists, skipping creation"
+fi
 
 # Metrics Server
 helm upgrade metrics-server metrics-server/metrics-server \
@@ -51,6 +56,17 @@ helm upgrade registry twuni/docker-registry \
   --namespace registry \
   --values "./values/registry-values.yaml" \
   --wait
+
+echo "Registry is running on https://registry.local.dev"
+
+helm upgrade registry-ui joxit/docker-registry-ui \
+  --create-namespace \
+  --install \
+  --namespace registry \
+  --values "./values/registry-ui-values.yaml" \
+  --wait
+
+echo "Registry UI is running on https://registry-ui.local.dev"
 
 # Traefik
 kubectl apply -f ./traefik/certificate.yaml

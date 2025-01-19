@@ -15,3 +15,13 @@ ingress:
     - secretName: registry-tls
       hosts:
         - registry.local.dev
+configData:
+  version: 0.1
+  http:
+    addr: :5000
+    headers:
+      X-Content-Type-Options: [nosniff]
+      Access-Control-Allow-Origin: ['https://registry-ui.local.dev']
+      Access-Control-Allow-Methods: ['HEAD', 'GET', 'OPTIONS', 'DELETE']
+      Access-Control-Allow-Headers: ['Authorization', 'Accept', 'Cache-Control']
+      Access-Control-Expose-Headers: ['Docker-Content-Digest']
