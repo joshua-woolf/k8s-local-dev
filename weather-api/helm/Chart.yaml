@@ -1,0 +1,5 @@
+apiVersion: v2
+name: weather-api
+description: A random weather forecast API
+version: 0.1.0
+appVersion: "1.0.0"

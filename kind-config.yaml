@@ -2,6 +2,9 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
+  extraMounts:
+    - hostPath: /Users/joshuaw/Documents/GitHub/ai-lab/certs/ca.crt
+      containerPath: /usr/local/share/ca-certificates/ca.crt
   extraPortMappings:
     - containerPort: 30080
       hostPort: 80
@@ -14,9 +17,18 @@ nodes:
       hostPort: 53
       protocol: TCP
 - role: worker
+  extraMounts:
+    - hostPath: /Users/joshuaw/Documents/GitHub/ai-lab/certs/ca.crt
+      containerPath: /usr/local/share/ca-certificates/ca.crt
 - role: worker
+  extraMounts:
+    - hostPath: /Users/joshuaw/Documents/GitHub/ai-lab/certs/ca.crt
+      containerPath: /usr/local/share/ca-certificates/ca.crt
 - role: worker
+  extraMounts:
+    - hostPath: /Users/joshuaw/Documents/GitHub/ai-lab/certs/ca.crt
+      containerPath: /usr/local/share/ca-certificates/ca.crt
 containerdConfigPatches:
 - |-
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."registry.registry.svc.cluster.local:5000"]
-    endpoint = ["http://registry.registry.svc.cluster.local:5000"]
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."registry.local.dev:5001"]
+    endpoint = ["https://registry:443"]
