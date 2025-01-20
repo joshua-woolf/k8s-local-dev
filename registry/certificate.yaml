@@ -10,7 +10,7 @@ metadata:
   namespace: registry
 spec:
   commonName: registry.local.dev
-  secretName: registry
+  secretName: registry-tls
   dnsNames:
     - registry.local.dev
     - registry

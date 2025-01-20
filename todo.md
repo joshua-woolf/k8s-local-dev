@@ -1,4 +1,3 @@
-Rename resources.
 Switch to using cloud-provider-kind to setup a load balancer rather than using node ports.
 Install gatekeeper.
 Get basic elastic stack working.

@@ -1,10 +1,9 @@
-replicaCount: 1
 ingress:
   annotations:
     external-dns.alpha.kubernetes.io/target: local.dev
     cert-manager.io/cluster-issuer: ca-issuer
-  enabled: true
   className: traefik
+  enabled: true
   hosts:
     - host: podinfo.local.dev
       paths:
@@ -13,4 +12,6 @@ ingress:
   tls:
     - hosts:
         - podinfo.local.dev
-      secretName: podinfo-cert
+      secretName: podinfo-tls
+
+replicaCount: 1

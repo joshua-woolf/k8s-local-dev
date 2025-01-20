@@ -55,22 +55,12 @@ kubectl apply -f ./dns/dns.yaml
 kubectl apply -f ./dns/external-dns.yaml
 
 # Container Registry
-
-helm upgrade registry-ui joxit/docker-registry-ui \
-  --create-namespace \
-  --install \
-  --namespace registry \
-  --values "./values/registry-ui-values.yaml" \
-  --wait
-
-# Extract Registry UI TLS Certificate
-
 kubectl apply -f ./registry/certificate.yaml
 
 echo "Waiting for Registry TLS certificate to be created..."
 max_attempts=30
 attempt=1
-while ! kubectl get secret -n registry registry >/dev/null 2>&1; do
+while ! kubectl get secret -n registry registry-tls >/dev/null 2>&1; do
   if [ $attempt -ge $max_attempts ]; then
     echo "Timeout waiting for registry secret"
     exit 1
@@ -82,10 +72,8 @@ done
 
 echo "Extracting Registry TLS certificate and key..."
 mkdir -p ./certs/registry
-kubectl get secret -n registry registry -o jsonpath='{.data.tls\.crt}' | base64 -d > ./certs/registry/registry.crt
-kubectl get secret -n registry registry -o jsonpath='{.data.tls\.key}' | base64 -d > ./certs/registry/registry.key
-
-echo "Registry UI is running on https://registry.local.dev"
+kubectl get secret -n registry registry-tls -o jsonpath='{.data.tls\.crt}' | base64 -d > ./certs/registry/registry.crt
+kubectl get secret -n registry registry-tls -o jsonpath='{.data.tls\.key}' | base64 -d > ./certs/registry/registry.key
 
 docker run -d --restart=always \
   -v ./certs/registry:/certs \
@@ -98,7 +86,16 @@ docker run -d --restart=always \
   -e REGISTRY_HTTP_HEADERS_Access-Control-Expose-Headers='["Docker-Content-Digest"]' \
   -p 5001:443 --name registry --network kind registry:2
 
-# echo "Registry is running on https://registry.local.dev:5001"
+echo "Registry is running on https://registry.local.dev:5001"
+
+helm upgrade registry-ui joxit/docker-registry-ui \
+  --create-namespace \
+  --install \
+  --namespace registry \
+  --values "./values/registry-ui-values.yaml" \
+  --wait
+
+echo "Registry UI is running on https://registry.local.dev"
 
 # Traefik
 kubectl apply -f ./traefik/certificate.yaml

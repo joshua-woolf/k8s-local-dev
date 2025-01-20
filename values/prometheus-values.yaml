@@ -1,30 +1,27 @@
 grafana:
   ingress:
     annotations:
-      external-dns.alpha.kubernetes.io/target: local.dev
       cert-manager.io/cluster-issuer: ca-issuer
+      external-dns.alpha.kubernetes.io/target: local.dev
     enabled: true
-    ingressClassName: traefik
     hosts:
       - grafana.local.dev
-    path: /
+    ingressClassName: traefik
     tls:
       - hosts:
           - grafana.local.dev
-        secretName: grafana-cert
+        secretName: grafana-tls
 
 prometheus:
   ingress:
     annotations:
-      external-dns.alpha.kubernetes.io/target: local.dev
       cert-manager.io/cluster-issuer: ca-issuer
+      external-dns.alpha.kubernetes.io/target: local.dev
     enabled: true
-    ingressClassName: traefik
     hosts:
       - prometheus.local.dev
-    paths:
-      - /
+    ingressClassName: traefik
     tls:
       - hosts:
           - prometheus.local.dev
-        secretName: prometheus-cert
+        secretName: prometheus-tls

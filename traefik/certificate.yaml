@@ -6,13 +6,13 @@ metadata:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: traefik-cert
+  name: traefik
   namespace: traefik
 spec:
   commonName: traefik.local.dev
-  secretName: traefik-cert
   dnsNames:
     - traefik.local.dev
   issuerRef:
     kind: ClusterIssuer
     name: ca-issuer
+  secretName: traefik-tls

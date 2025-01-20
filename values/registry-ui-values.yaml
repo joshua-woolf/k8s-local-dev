@@ -1,18 +1,18 @@
 ui:
-  title: "Local Development Registry"
   dockerRegistryUrl: "https://registry.local.dev:5001"
+
   deleteImages: true
 
   ingress:
     enabled: true
-    ingressClassName: traefik
     host: registry.local.dev
-    path: /
-    pathType: Prefix
+    ingressClassName: traefik
     annotations:
-      external-dns.alpha.kubernetes.io/target: local.dev
       cert-manager.io/cluster-issuer: ca-issuer
+      external-dns.alpha.kubernetes.io/target: local.dev
     tls:
-      - secretName: registry-tls
+      - secretName: registry-ui-tls
         hosts:
           - registry.local.dev
+
+  title: "Local Dev Registry"

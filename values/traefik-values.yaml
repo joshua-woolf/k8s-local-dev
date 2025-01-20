@@ -8,7 +8,7 @@ ingressRoute:
       - websecure
     matchRule: Host(`traefik.local.dev`)
     tls:
-      secretName: traefik-cert
+      secretName: traefik-tls
       domains:
         - main: traefik.local.dev
 
@@ -17,9 +17,9 @@ ports:
     nodePort: 30080
     redirections:
       entryPoint:
-        to: websecure
-        scheme: https
         permanent: true
+        scheme: https
+        to: websecure
   websecure:
     nodePort: 30443
     tls:
