@@ -131,3 +131,6 @@ zsdoc/data
 !/tests/_output/.gitkeep
 
 # End of https://www.toptal.com/developers/gitignore/api/git,helm,linux,macos,powershell,visualstudiocode,zsh
+
+*.crt
+*.key
