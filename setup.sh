@@ -80,7 +80,6 @@ while ! kubectl get secret -n registry registry-tls >/dev/null 2>&1; do
 done
 
 echo "Extracting Registry TLS certificate and key..."
-mkdir -p ./certs/registry
 kubectl get secret -n registry registry-tls -o jsonpath='{.data.tls\.crt}' | base64 -d > ./certs/registry.crt
 kubectl get secret -n registry registry-tls -o jsonpath='{.data.tls\.key}' | base64 -d > ./certs/registry.key
 
