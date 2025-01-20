@@ -3,6 +3,7 @@
 # Helm Repos
 helm repo add elastic https://helm.elastic.co
 helm repo add flagger https://flagger.app
+helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 helm repo add jetstack https://charts.jetstack.io
 helm repo add joxit https://helm.joxit.dev
 helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
@@ -11,7 +12,7 @@ helm repo add podinfo https://stefanprodan.github.io/podinfo
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add traefik https://traefik.github.io/charts
 
-helm repo update elastic flagger jetstack joxit metrics-server open-telemetry podinfo prometheus-community traefik
+helm repo update elastic flagger gatekeeper jetstack joxit metrics-server open-telemetry podinfo prometheus-community traefik
 
 # Trusted Root CA Certificate
 if ! security find-certificate -c "Local Dev Root" /Library/Keychains/System.keychain >/dev/null 2>&1; then
@@ -38,6 +39,14 @@ helm upgrade metrics-server metrics-server/metrics-server \
   --install \
   --namespace monitoring \
   --values "./values/metrics-server-values.yaml" \
+  --wait
+
+# Gatekeeper
+helm upgrade gatekeeper gatekeeper/gatekeeper \
+  --create-namespace \
+  --install \
+  --namespace gatekeeper-system \
+  --values "./values/gatekeeper-values.yaml" \
   --wait
 
 # Cert Manager
