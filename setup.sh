@@ -188,7 +188,17 @@ helm upgrade podinfo podinfo/podinfo \
 
 echo "PodInfo is running on http://podinfo.local.dev"
 
+
 # Weather API
-cd weather-api && ./deploy.sh && cd ..
+sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+
+docker build -t registry.local.dev:5001/weather-api:latest ./weather-api
+docker push registry.local.dev:5001/weather-api:latest
+
+helm upgrade weather-api ./weather-api/helm \
+  --create-namespace \
+  --install \
+  --namespace weather-api \
+  --wait
 
 echo "Weather API is running on https://weather.local.dev"

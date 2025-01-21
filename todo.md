@@ -1,4 +1,3 @@
-Merge weather script.
 Get basic elastic stack working.
 Get prometheus working nicely.
 Add dashboards to Grafana.
