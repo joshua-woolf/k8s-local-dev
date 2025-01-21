@@ -3,6 +3,8 @@ command:
 
 image:
   repository: otel/opentelemetry-collector-k8s
+  tag: 0.117.0
+  digest: sha256:3803f762468a7dc534d57e53c21704fa5a64d025030804a64d454e70820d8f45
 
 mode: deployment
 

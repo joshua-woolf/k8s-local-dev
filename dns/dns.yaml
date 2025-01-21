@@ -69,7 +69,7 @@ spec:
     spec:
       containers:
         - name: bind9
-          image: "ubuntu/bind9:latest"
+          image: "ubuntu/bind9:9.18-22.04_beta@sha256:38fc0495351783f1ab2fa63865aa00a2a609dc50dadf59e8ed6235e48cdaba6f"
           imagePullPolicy: IfNotPresent
           ports:
             - name: dns-tcp

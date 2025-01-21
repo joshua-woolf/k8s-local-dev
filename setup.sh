@@ -39,6 +39,7 @@ helm upgrade metrics-server metrics-server/metrics-server \
   --install \
   --namespace monitoring \
   --values "./values/metrics-server-values.yaml" \
+  --version 3.12.2 \
   --wait
 
 # Gatekeeper
@@ -47,6 +48,7 @@ helm upgrade gatekeeper gatekeeper/gatekeeper \
   --install \
   --namespace gatekeeper-system \
   --values "./values/gatekeeper-values.yaml" \
+  --version 3.18.2 \
   --wait
 
 # Cert Manager
@@ -55,6 +57,7 @@ helm upgrade cert-manager jetstack/cert-manager \
   --install \
   --namespace cert-manager \
   --values "./values/cert-manager-values.yaml" \
+  --version v1.16.3 \
   --wait
 
 kubectl apply -f ./certs/cluster-issuer.yaml
@@ -92,7 +95,7 @@ docker run -d --restart=always \
   -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods='["DELETE", "GET", "HEAD", "OPTIONS"]' \
   -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers='["Authorization", "Accept", "Cache-Control"]' \
   -e REGISTRY_HTTP_HEADERS_Access-Control-Expose-Headers='["Docker-Content-Digest"]' \
-  -p 5001:443 --name registry --network kind registry:2
+  -p 5001:443 --name registry --network kind registry:2.8.3@sha256:319881be2ee9e345d5837d15842a04268de6a139e23be42654fc7664fc6eaf52
 
 echo "Registry is running on https://registry.local.dev:5001"
 
@@ -101,6 +104,7 @@ helm upgrade registry-ui joxit/docker-registry-ui \
   --install \
   --namespace registry \
   --values "./values/registry-ui-values.yaml" \
+  --version 1.1.3 \
   --wait
 
 echo "Registry UI is running on https://registry.local.dev"
@@ -113,6 +117,7 @@ helm upgrade traefik traefik/traefik \
   --install \
   --namespace traefik \
   --values "./values/traefik-values.yaml" \
+  --version 34.1.0 \
   --wait
 
 echo "Traefik Dashboard is running on http://traefik.local.dev"
@@ -123,6 +128,7 @@ helm upgrade kube-prometheus prometheus-community/kube-prometheus-stack \
   --install \
   --namespace monitoring \
   --values "./values/prometheus-values.yaml" \
+  --version 68.3.0 \
   --wait
 
 echo "Grafana is running on http://grafana.local.dev"
@@ -140,6 +146,7 @@ helm upgrade otel-collector open-telemetry/opentelemetry-collector \
   --install \
   --namespace monitoring \
   --values "./values/otel-collector-values.yaml" \
+  --version 0.111.2 \
   --wait
 
 ## Flagger
@@ -148,6 +155,7 @@ helm upgrade flagger flagger/flagger \
   --install \
   --namespace flagger \
   --values "./values/flagger-values.yaml" \
+  --version 1.40.0 \
   --wait
 
 helm upgrade flagger-loadtester flagger/loadtester \
@@ -155,6 +163,7 @@ helm upgrade flagger-loadtester flagger/loadtester \
   --install \
   --namespace flagger \
   --values "./values/flagger-loadtester-values.yaml" \
+  --version 0.34.0 \
   --wait
 
 # Elastic Stack
@@ -163,6 +172,7 @@ helm upgrade elastic-operator elastic/eck-operator \
   --install \
   --namespace elastic-system \
   --values "./values/elastic-operator-values.yaml" \
+  --version 2.16.1 \
   --wait
 
 kubectl apply -f ./elastic/elastic.yaml
@@ -173,6 +183,7 @@ helm upgrade podinfo podinfo/podinfo \
   --install \
   --namespace podinfo \
   --values "./values/podinfo-values.yaml" \
+  --version 6.1.4 \
   --wait
 
 echo "PodInfo is running on http://podinfo.local.dev"
