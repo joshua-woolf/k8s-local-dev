@@ -1,0 +1,8 @@
+nodeSelector:
+  kubernetes.io/os: linux
+
+rbac:
+  create: true
+
+securityContext:
+  enabled: true

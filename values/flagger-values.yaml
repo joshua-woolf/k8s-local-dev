@@ -1,1 +1,6 @@
 meshProvider: traefik
+
+metricsServer: http://kube-prometheus-kube-prome-prometheus.monitoring.svc:9090
+
+nodeSelector:
+  kubernetes.io/os: linux

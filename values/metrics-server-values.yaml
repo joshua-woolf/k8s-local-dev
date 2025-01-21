@@ -1,2 +1,5 @@
 args:
   - --kubelet-insecure-tls
+
+nodeSelector:
+  kubernetes.io/os: linux

@@ -1,3 +1,9 @@
+additionalArguments:
+  - --entrypoints.web.http.encodequerysemicolons=true
+  - --entrypoints.websecure.http.encodequerysemicolons=true
+
+globalArguments:
+
 ingressRoute:
   dashboard:
     annotations:
@@ -12,8 +18,13 @@ ingressRoute:
       domains:
         - main: traefik.local.dev
 
+nodeSelector:
+  kubernetes.io/os: linux
+
 ports:
   web:
+    forwardedHeaders:
+      insecure: true
     nodePort: 30080
     redirections:
       entryPoint:
@@ -24,6 +35,15 @@ ports:
     nodePort: 30443
     tls:
       enabled: true
+
+providers:
+  kubernetesCRD:
+    allowCrossNamespace: true
+    allowEmptyServices: true
+    allowExternalNameServices: true
+  kubernetesIngress:
+    allowEmptyServices: true
+    allowExternalNameServices: true
 
 service:
   type: NodePort
