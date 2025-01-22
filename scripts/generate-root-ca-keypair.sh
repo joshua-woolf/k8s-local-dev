@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 if [ ! -f "../certs/ca.key" ] || [ ! -f "../certs/ca.crt" ]; then
   openssl genrsa -out "../certs/ca.key" 4096

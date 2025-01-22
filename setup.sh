@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Helm Repos
 helm repo add elastic https://helm.elastic.co
@@ -89,12 +89,16 @@ kubectl get secret -n registry registry-tls -o jsonpath='{.data.tls\.key}' | bas
 docker run -d --restart=always \
   -v ./certs:/certs \
   -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
+  -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers='["Authorization", "Accept", "Cache-Control"]' \
+  -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods='["DELETE", "GET", "HEAD", "OPTIONS"]' \
+  -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin='["https://registry.local.dev"]' \
+  -e REGISTRY_HTTP_HEADERS_Access-Control-Expose-Headers='["Docker-Content-Digest"]' \
+  -e REGISTRY_HTTP_SECRET=345704b227b4dac03f0c06ddaecc7ab7349f7f0e33b8cc4cb4e73c4936c50d81 \
   -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt \
   -e REGISTRY_HTTP_TLS_KEY=/certs/registry.key \
-  -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin='["https://registry.local.dev"]' \
-  -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods='["DELETE", "GET", "HEAD", "OPTIONS"]' \
-  -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers='["Authorization", "Accept", "Cache-Control"]' \
-  -e REGISTRY_HTTP_HEADERS_Access-Control-Expose-Headers='["Docker-Content-Digest"]' \
+  -e REGISTRY_LOG_FORMATTER=json \
+  -e REGISTRY_LOG_LEVEL=info \
+  -e REGISTRY_STORAGE_DELETE_ENABLED=true \
   -p 5001:443 --name registry --network kind registry:2.8.3@sha256:319881be2ee9e345d5837d15842a04268de6a139e23be42654fc7664fc6eaf52
 
 echo "Registry is running on https://registry.local.dev:5001"

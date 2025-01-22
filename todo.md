@@ -6,7 +6,6 @@ Make the deployments production ready:
   - [ ] elastic
   - [ ] prometheus
   - [ ] grafana
-  - [ ] registry
   - [ ] registry-ui
 Fix any warning or errors in pods where possible:
   - [ ] cert manager
@@ -14,7 +13,6 @@ Fix any warning or errors in pods where possible:
   - [ ] elastic
   - [ ] prometheus
   - [ ] grafana
-  - [ ] registry
 Label and annotate all resources:
   - [ ] cert manager
   - [ ] bind9
@@ -27,7 +25,6 @@ Label and annotate all resources:
   - [ ] prometheus
   - [ ] grafana
   - [ ] traefik
-  - [ ] registry
   - [ ] registry-ui
   - [ ] flagger
   - [ ] flagger-loadtester
@@ -44,7 +41,6 @@ Hook up apps to telemetry:
   - [ ] prometheus
   - [ ] grafana
   - [ ] traefik
-  - [ ] registry
   - [ ] registry-ui
   - [ ] flagger
   - [ ] flagger-loadtester
