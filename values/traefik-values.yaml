@@ -18,6 +18,13 @@ ingressRoute:
       domains:
         - main: traefik.local.dev
 
+metrics:
+  prometheus:
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus
+
 nodeSelector:
   kubernetes.io/os: linux
 

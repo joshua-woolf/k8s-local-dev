@@ -3,7 +3,6 @@ Make the deployments production ready:
   - [ ] external dns
   - [ ] otel collector
   - [ ] elastic
-  - [ ] registry-ui
 Fix any warning or errors in pods where possible:
   - [ ] otel collector
   - [ ] elastic
@@ -28,8 +27,6 @@ Hook up apps to telemetry:
   - [ ] external dns
   - [ ] otel collector
   - [ ] elastic
-  - [ ] traefik
-  - [ ] registry-ui
 Add dashboards to Grafana.
 Change entire setup to use flux for deployment.
 Switch to using cloud-provider-kind to setup a load balancer rather than using node ports.

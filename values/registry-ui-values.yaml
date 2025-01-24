@@ -1,4 +1,6 @@
 ui:
+  catalogDefaultExpanded: true
+
   dockerRegistryUrl: "https://registry.local.dev:5001"
 
   deleteImages: true
@@ -14,5 +16,8 @@ ui:
       - secretName: registry-ui-tls
         hosts:
           - registry.local.dev
+
+  nodeSelector:
+    kubernetes.io/os:
 
   title: "Local Dev Registry"
