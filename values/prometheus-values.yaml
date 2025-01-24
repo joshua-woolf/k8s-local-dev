@@ -1,4 +1,11 @@
+alertmanager:
+  enabled: false
+
 grafana:
+  adminPassword: admin
+  grafana.ini:
+    analytics:
+      check_for_updates: false
   ingress:
     annotations:
       cert-manager.io/cluster-issuer: ca-issuer
@@ -11,6 +18,39 @@ grafana:
       - hosts:
           - grafana.local.dev
         secretName: grafana-tls
+  nodeSelector:
+    kubernetes.io/os: linux
+  persistence:
+    enabled: true
+    size: 5Gi
+  sidecar:
+    alertmanager:
+      enabled: false
+  testFramework:
+    enabled: false
+
+kube-state-metrics:
+  nodeSelector:
+    kubernetes.io/os: linux
+
+kubeControllerManager:
+  enabled: false
+
+kubeEtcd:
+  enabled: false
+
+kubeProxy:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
+nodeExporter:
+  operatingSystems:
+    aix:
+      enabled: false
+    darwin:
+      enabled: false
 
 prometheus:
   ingress:
@@ -21,7 +61,25 @@ prometheus:
     hosts:
       - prometheus.local.dev
     ingressClassName: traefik
+  nodeSelector:
+    kubernetes.io/os: linux
+  storageSpec:
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
     tls:
       - hosts:
           - prometheus.local.dev
         secretName: prometheus-tls
+
+prometheus-node-exporter:
+  nodeSelector:
+    kubernetes.io/os: linux
+
+prometheusOperator:
+  nodeSelector:
+    kubernetes.io/os: linux

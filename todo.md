@@ -4,15 +4,11 @@ Make the deployments production ready:
   - [ ] external dns
   - [ ] otel collector
   - [ ] elastic
-  - [ ] prometheus
-  - [ ] grafana
   - [ ] registry-ui
 Fix any warning or errors in pods where possible:
   - [ ] cert manager
   - [ ] otel collector
   - [ ] elastic
-  - [ ] prometheus
-  - [ ] grafana
 Label and annotate all resources:
   - [ ] cert manager
   - [ ] bind9
@@ -38,8 +34,6 @@ Hook up apps to telemetry:
   - [ ] otel collector
   - [ ] elastic
   - [ ] podinfo
-  - [ ] prometheus
-  - [ ] grafana
   - [ ] traefik
   - [ ] registry-ui
   - [ ] flagger

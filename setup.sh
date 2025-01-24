@@ -33,6 +33,24 @@ for node in $(kind get nodes); do
   "
 done
 
+# Prometheus Stack
+helm upgrade kube-prometheus prometheus-community/kube-prometheus-stack \
+  --create-namespace \
+  --install \
+  --namespace monitoring \
+  --values "./values/prometheus-values.yaml" \
+  --version 68.3.0 \
+  --wait
+
+echo "Grafana is running on http://grafana.local.dev"
+
+echo -n "Username: "
+kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-user}" | base64 --decode ; echo
+echo -n "Password: "
+kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+
+echo "Prometheus is running on http://prometheus.local.dev"
+
 # Metrics Server
 helm upgrade metrics-server metrics-server/metrics-server \
   --create-namespace \
@@ -125,24 +143,6 @@ helm upgrade traefik traefik/traefik \
   --wait
 
 echo "Traefik Dashboard is running on http://traefik.local.dev"
-
-# Prometheus Stack
-helm upgrade kube-prometheus prometheus-community/kube-prometheus-stack \
-  --create-namespace \
-  --install \
-  --namespace monitoring \
-  --values "./values/prometheus-values.yaml" \
-  --version 68.3.0 \
-  --wait
-
-echo "Grafana is running on http://grafana.local.dev"
-
-echo -n "Username: "
-kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-user}" | base64 --decode ; echo
-echo -n "Password: "
-kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
-
-echo "Prometheus is running on http://prometheus.local.dev"
 
 # OpenTelemetry Collector
 helm upgrade otel-collector open-telemetry/opentelemetry-collector \
