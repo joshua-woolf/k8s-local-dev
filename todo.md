@@ -29,7 +29,6 @@ Hook up apps to telemetry:
   - [ ] cert manager
   - [ ] bind9
   - [ ] external dns
-  - [ ] metrics server
   - [ ] gatekeeper
   - [ ] otel collector
   - [ ] elastic
