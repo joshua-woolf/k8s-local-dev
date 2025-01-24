@@ -28,6 +28,7 @@ Hook up apps to telemetry:
   - [ ] otel collector
   - [ ] elastic
 Add dashboards to Grafana.
+Look at prometheus alerts.
 Change entire setup to use flux for deployment.
 Switch to using cloud-provider-kind to setup a load balancer rather than using node ports.
 Look at using a service mesh.
