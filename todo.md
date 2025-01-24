@@ -1,12 +1,10 @@
 Make the deployments production ready:
-  - [ ] cert manager
   - [ ] bind9
   - [ ] external dns
   - [ ] otel collector
   - [ ] elastic
   - [ ] registry-ui
 Fix any warning or errors in pods where possible:
-  - [ ] cert manager
   - [ ] otel collector
   - [ ] elastic
 Label and annotate all resources:
@@ -26,7 +24,6 @@ Label and annotate all resources:
   - [ ] flagger-loadtester
 Get elastic stack working.
 Hook up apps to telemetry:
-  - [ ] cert manager
   - [ ] bind9
   - [ ] external dns
   - [ ] gatekeeper
