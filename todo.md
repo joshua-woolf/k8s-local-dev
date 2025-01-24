@@ -1,6 +1,5 @@
 Make the deployments production ready:
   - [ ] bind9
-  - [ ] external dns
   - [ ] otel collector
   - [ ] elastic
 Fix any warning or errors in pods where possible:
@@ -24,7 +23,6 @@ Label and annotate all resources:
 Get elastic stack working.
 Hook up apps to telemetry:
   - [ ] bind9
-  - [ ] external dns
   - [ ] otel collector
   - [ ] elastic
 Add dashboards to Grafana.

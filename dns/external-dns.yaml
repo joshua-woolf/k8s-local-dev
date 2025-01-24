@@ -70,6 +70,10 @@ spec:
         app: external-dns
     spec:
       serviceAccountName: external-dns
+      securityContext:
+        fsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
       containers:
       - name: external-dns
         image: registry.k8s.io/external-dns/external-dns:v0.15.1@sha256:4f3ba4c2bd28030caad05bb7b47fbf47549a46d5e8443b74f0be463550b4fc2b
@@ -91,3 +95,61 @@ spec:
         - --domain-filter=local.dev
         - --traefik-disable-legacy
         - --interval=15s
+        - --metrics-address=:7979
+        - --log-level=info
+        - --policy=sync
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        ports:
+        - name: metrics
+          containerPort: 7979
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 7979
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 7979
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: external-dns
+  namespace: dns
+  labels:
+    release: kube-prometheus
+spec:
+  endpoints:
+  - port: metrics
+  jobLabel: external-dns
+  selector:
+    matchLabels:
+      app: external-dns
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-dns
+  namespace: dns
+  labels:
+    app: external-dns
+spec:
+  type: ClusterIP
+  ports:
+  - name: metrics
+    port: 7979
+    targetPort: metrics
+    protocol: TCP
+  selector:
+    app: external-dns
