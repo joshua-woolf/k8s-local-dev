@@ -10,18 +10,81 @@ metadata:
   namespace: dns
 data:
   named.conf.options: |
+    acl internal {
+      10.0.0.0/8;
+      172.16.0.0/12;
+      192.168.0.0/16;
+      localhost;
+      localnets;
+    };
+
     options {
       directory "/var/cache/bind";
+
+      # Forwarders configuration
       forwarders {
         8.8.8.8;
         8.8.4.4;
       };
       forward only;
-      listen-on { any; };
-      allow-query { any; };
+
+      # Network configuration
+      listen-on port 53 { any; };
+      listen-on-v6 { none; };
+      allow-query { internal; };
+      allow-recursion { internal; };
+      allow-query-cache { internal; };
+
+      # Performance tuning
+      max-cache-size 256m;
+      max-cache-ttl 86400;
+      max-ncache-ttl 3600;
+      recursive-clients 3000;
+      tcp-clients 2000;
+
+      # Security settings
+      version "not disclosed";
       dnssec-validation auto;
+      auth-nxdomain no;
+      empty-zones-enable yes;
+
+      # Rate limiting to prevent DNS amplification attacks
+      rate-limit {
+        responses-per-second 20;
+        window 5;
+      };
+
+      # Memory and transfer tuning
+      transfer-format many-answers;
+      transfers-in 10;
+      transfers-out 10;
+      transfers-per-ns 2;
     };
 
+    # Statistics configuration
+    statistics-channels {
+      inet 127.0.0.1 port 8053 allow { 127.0.0.1; };
+    };
+
+    # Logging configuration
+    logging {
+      channel default_log {
+        file "/var/log/named/default.log" versions 3 size 20m;
+        severity info;
+        print-time yes;
+        print-severity yes;
+        print-category yes;
+      };
+
+      channel query_log {
+        file "/var/log/named/query.log" versions 3 size 20m;
+        severity info;
+        print-time yes;
+      };
+
+      category default { default_log; };
+      category queries { query_log; };
+    };
 
   named.conf.local: |
     key "externaldns-key" {
@@ -66,11 +129,15 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: bind9
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9119"
     spec:
       containers:
         - name: bind9
           image: "ubuntu/bind9:9.18-22.04_beta@sha256:38fc0495351783f1ab2fa63865aa00a2a609dc50dadf59e8ed6235e48cdaba6f"
-          imagePullPolicy: IfNotPresent
+          command: ["/usr/sbin/named"]
+          args: ["-g", "-c", "/etc/bind/named.conf"]
           ports:
             - name: dns-tcp
               containerPort: 53
@@ -78,6 +145,19 @@ spec:
             - name: dns-udp
               containerPort: 53
               protocol: UDP
+            - name: stats
+              containerPort: 8053
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: 53
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 53
+            initialDelaySeconds: 5
+            periodSeconds: 10
           volumeMounts:
             - name: config
               mountPath: /etc/bind/named.conf.options
@@ -88,10 +168,23 @@ spec:
             - name: config
               mountPath: /var/cache/bind/local.dev.zone
               subPath: local.dev.zone
+            - name: bind-logs
+              mountPath: /var/log/named
+        - name: bind-exporter
+          image: "prometheuscommunity/bind-exporter:v0.6.0"
+          args:
+            - "--bind.stats-url=http://localhost:8053/"
+            - "--bind.timeout=20s"
+            - "--web.listen-address=:9119"
+          ports:
+            - name: metrics
+              containerPort: 9119
       volumes:
         - name: config
           configMap:
             name: bind9
+        - name: bind-logs
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -111,5 +204,9 @@ spec:
       port: 53
       targetPort: 53
       nodePort: 30053
+    - name: stats
+      protocol: TCP
+      port: 8053
+      targetPort: 8053
   selector:
     app.kubernetes.io/name: bind9

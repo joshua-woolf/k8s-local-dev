@@ -18,6 +18,6 @@ ui:
           - registry.local.dev
 
   nodeSelector:
-    kubernetes.io/os:
+    kubernetes.io/os: linux
 
   title: "Local Dev Registry"

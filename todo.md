@@ -1,5 +1,8 @@
-Make the deployments production ready:
+Change bind9 to use a service monitor.
+Add waits for pods to be ready:
   - [ ] bind9
+  - [ ] external dns
+Make the deployments production ready:
   - [ ] otel collector
   - [ ] elastic
 Fix any warning or errors in pods where possible:
@@ -20,11 +23,10 @@ Label and annotate all resources:
   - [ ] registry-ui
   - [ ] flagger
   - [ ] flagger-loadtester
-Get elastic stack working.
 Hook up apps to telemetry:
-  - [ ] bind9
   - [ ] otel collector
   - [ ] elastic
+Get elastic stack working.
 Add dashboards to Grafana.
 Look at prometheus alerts.
 Change entire setup to use flux for deployment.
