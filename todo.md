@@ -26,14 +26,10 @@ Get elastic stack working.
 Hook up apps to telemetry:
   - [ ] bind9
   - [ ] external dns
-  - [ ] gatekeeper
   - [ ] otel collector
   - [ ] elastic
-  - [ ] podinfo
   - [ ] traefik
   - [ ] registry-ui
-  - [ ] flagger
-  - [ ] flagger-loadtester
 Add dashboards to Grafana.
 Change entire setup to use flux for deployment.
 Switch to using cloud-provider-kind to setup a load balancer rather than using node ports.
