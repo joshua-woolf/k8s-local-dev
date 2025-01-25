@@ -1,6 +1,3 @@
-Add waits for pods to be ready:
-  - [ ] bind9
-  - [ ] external dns
 Make the deployments production ready:
   - [ ] otel collector
   - [ ] elastic
@@ -29,6 +26,7 @@ Get elastic stack working.
 Add dashboards to Grafana.
 Look at prometheus alerts.
 Change entire setup to use flux for deployment.
+Add local image cache.
 Switch to using cloud-provider-kind to setup a load balancer rather than using node ports.
 Look at using a service mesh.
 Look at adding network policies.

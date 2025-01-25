@@ -82,7 +82,18 @@ kubectl apply -f ./certs/cluster-issuer.yaml
 
 # DNS
 kubectl apply -f ./dns/dns.yaml
+
+kubectl wait --namespace dns \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/name=bind9 \
+  --timeout=300s
+
 kubectl apply -f ./dns/external-dns.yaml
+
+kubectl wait --namespace dns \
+  --for=condition=ready pod \
+  --selector=app=external-dns \
+  --timeout=300s
 
 # Container Registry
 kubectl apply -f ./registry/certificate.yaml
