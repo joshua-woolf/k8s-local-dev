@@ -1,4 +1,3 @@
-Change bind9 to use a service monitor.
 Add waits for pods to be ready:
   - [ ] bind9
   - [ ] external dns

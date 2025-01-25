@@ -129,9 +129,6 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: bind9
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9119"
     spec:
       containers:
         - name: bind9
@@ -191,6 +188,8 @@ kind: Service
 metadata:
   name: bind9
   namespace: dns
+  labels:
+    app.kubernetes.io/name: bind9
 spec:
   type: NodePort
   ports:
@@ -208,5 +207,24 @@ spec:
       protocol: TCP
       port: 8053
       targetPort: 8053
+    - name: metrics
+      protocol: TCP
+      port: 9119
+      targetPort: 9119
   selector:
     app.kubernetes.io/name: bind9
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: bind9
+  namespace: dns
+  labels:
+    release: kube-prometheus
+spec:
+  endpoints:
+  - port: metrics
+  jobLabel: bind9
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bind9
