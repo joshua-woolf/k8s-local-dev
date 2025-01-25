@@ -2,4 +2,6 @@
 
 kind delete cluster
 
-docker rm -f registry
+if docker ps -f name=registry | grep -q registry; then
+  docker rm -f registry
+fi
