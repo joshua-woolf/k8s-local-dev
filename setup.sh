@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Helm Repos
 helm repo add elastic https://helm.elastic.co
