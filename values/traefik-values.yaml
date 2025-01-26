@@ -2,6 +2,9 @@ additionalArguments:
   - --entrypoints.web.http.encodequerysemicolons=true
   - --entrypoints.websecure.http.encodequerysemicolons=true
 
+commonLabels:
+  app.kubernetes.io/version: 34.1.0
+
 globalArguments:
 
 ingressRoute:

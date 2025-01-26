@@ -42,14 +42,14 @@ helm upgrade kube-prometheus prometheus-community/kube-prometheus-stack \
   --version 68.3.0 \
   --wait
 
-echo "Grafana is running on http://grafana.local.dev"
+echo "Grafana is running on https://grafana.local.dev"
 
 echo -n "Username: "
 kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-user}" | base64 --decode ; echo
 echo -n "Password: "
 kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
 
-echo "Prometheus is running on http://prometheus.local.dev"
+echo "Prometheus is running on https://prometheus.local.dev"
 
 # Metrics Server
 helm upgrade metrics-server metrics-server/metrics-server \
@@ -157,7 +157,7 @@ helm upgrade traefik traefik/traefik \
   --version 34.1.0 \
   --wait
 
-echo "Traefik Dashboard is running on http://traefik.local.dev"
+echo "Traefik Dashboard is running on https://traefik.local.dev"
 
 # OpenTelemetry Collector
 helm upgrade otel-collector open-telemetry/opentelemetry-collector \
@@ -205,7 +205,7 @@ helm upgrade podinfo podinfo/podinfo \
   --version 6.1.4 \
   --wait
 
-echo "PodInfo is running on http://podinfo.local.dev"
+echo "PodInfo is running on https://podinfo.local.dev"
 
 
 # Weather API

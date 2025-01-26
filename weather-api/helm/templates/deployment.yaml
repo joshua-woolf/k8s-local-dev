@@ -3,16 +3,20 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}
   labels:
-    app: {{ .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Values.image.tag }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ .Release.Name }}
+      app.kubernetes.io/name: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: {{ .Release.Name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/name: {{ .Release.Name }}
+        app.kubernetes.io/version: {{ .Values.image.tag }}
     spec:
       containers:
         - name: {{ .Chart.Name }}

@@ -3,6 +3,10 @@ kind: ClusterRole
 metadata:
   name: external-dns
   namespace: dns
+  labels:
+    app.kubernetes.io/instance: external-dns
+    app.kubernetes.io/name: external-dns
+    app.kubernetes.io/version: v0.15.1
 rules:
 - apiGroups:
   - ""
@@ -40,12 +44,20 @@ kind: ServiceAccount
 metadata:
   name: external-dns
   namespace: dns
+  labels:
+    app.kubernetes.io/instance: external-dns
+    app.kubernetes.io/name: external-dns
+    app.kubernetes.io/version: v0.15.1
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: external-dns-viewer
   namespace: dns
+  labels:
+    app.kubernetes.io/instance: external-dns
+    app.kubernetes.io/name: external-dns
+    app.kubernetes.io/version: v0.15.1
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -60,14 +72,20 @@ kind: Deployment
 metadata:
   name: external-dns
   namespace: dns
+  labels:
+    app.kubernetes.io/instance: external-dns
+    app.kubernetes.io/name: external-dns
+    app.kubernetes.io/version: v0.15.1
 spec:
   selector:
     matchLabels:
-      app: external-dns
+      app.kubernetes.io/name: external-dns
   template:
     metadata:
       labels:
-        app: external-dns
+        app.kubernetes.io/instance: external-dns
+        app.kubernetes.io/name: external-dns
+        app.kubernetes.io/version: v0.15.1
     spec:
       serviceAccountName: external-dns
       securityContext:
@@ -128,14 +146,16 @@ metadata:
   name: external-dns
   namespace: dns
   labels:
-    release: kube-prometheus
+    app.kubernetes.io/instance: external-dns
+    app.kubernetes.io/name: external-dns
+    app.kubernetes.io/version: v0.15.1
 spec:
   endpoints:
   - port: metrics
   jobLabel: external-dns
   selector:
     matchLabels:
-      app: external-dns
+      app.kubernetes.io/name: external-dns
 ---
 apiVersion: v1
 kind: Service
@@ -143,7 +163,9 @@ metadata:
   name: external-dns
   namespace: dns
   labels:
-    app: external-dns
+    app.kubernetes.io/instance: external-dns
+    app.kubernetes.io/name: external-dns
+    app.kubernetes.io/version: v0.15.1
 spec:
   type: ClusterIP
   ports:
@@ -152,4 +174,4 @@ spec:
     targetPort: metrics
     protocol: TCP
   selector:
-    app: external-dns
+    app.kubernetes.io/name: external-dns
