@@ -180,9 +180,10 @@ spec:
         - name: bind-exporter
           image: "prometheuscommunity/bind-exporter:v0.6.0"
           args:
-            - "--bind.stats-url=http://localhost:8053/"
-            - "--bind.timeout=20s"
-            - "--web.listen-address=:9119"
+            - --bind.stats-groups=server,view
+            - --bind.stats-url=http://localhost:8053/
+            - --bind.timeout=20s
+            - --web.listen-address=:9119
           ports:
             - name: metrics
               containerPort: 9119

@@ -149,6 +149,7 @@ metadata:
     app.kubernetes.io/instance: external-dns
     app.kubernetes.io/name: external-dns
     app.kubernetes.io/version: v0.15.1
+    release: kube-prometheus
 spec:
   endpoints:
   - port: metrics

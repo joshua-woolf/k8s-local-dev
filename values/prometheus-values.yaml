@@ -3,6 +3,32 @@ alertmanager:
 
 grafana:
   adminPassword: admin
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+  dashboards:
+    default:
+      bind9:
+        gnetId: 12309
+        revision: 5
+        datasource: Prometheus
+      external-dns:
+        gnetId: 15038
+        revision: 3
+        datasource: Prometheus
+      traefik:
+        gnetId: 17347
+        revision: 9
+        datasource: Prometheus
   grafana.ini:
     analytics:
       check_for_updates: false
