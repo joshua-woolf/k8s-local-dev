@@ -100,7 +100,7 @@ kubectl apply -f ./dns/external-dns.yaml
 
 kubectl wait --namespace dns \
   --for=condition=ready pod \
-  --selector=app=external-dns \
+  --selector=app.kubernetes.io/name=external-dns \
   --timeout=300s
 
 # Container Registry
@@ -214,7 +214,6 @@ helm upgrade podinfo podinfo/podinfo \
   --wait
 
 echo "PodInfo is running on https://podinfo.local.dev"
-
 
 # Weather API
 sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
