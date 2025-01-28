@@ -34,6 +34,14 @@ for node in $(kind get nodes); do
 done
 
 # Prometheus Stack
+kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+
+# Install Grafana dashboards
+helm upgrade grafana-dashboards ./grafana-dashboards \
+  --install \
+  --namespace monitoring \
+  --wait
+
 helm upgrade kube-prometheus prometheus-community/kube-prometheus-stack \
   --create-namespace \
   --install \

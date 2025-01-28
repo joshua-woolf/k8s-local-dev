@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: custom-grafana-dashboards
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/instance: grafana-dashboards
+    app.kubernetes.io/name: grafana-dashboards
+    app.kubernetes.io/version: latest
+    grafana_dashboard: "1"
+data:
+  {{- $files := .Files }}
+  {{- range $path, $_ :=  .Files.Glob  "dashboards/*.json" }}
+  {{ base $path }}: |-
+    {{- $files.Get $path | nindent 4 }}
+  {{- end }}

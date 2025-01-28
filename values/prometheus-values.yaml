@@ -3,32 +3,6 @@ alertmanager:
 
 grafana:
   adminPassword: admin
-  dashboardProviders:
-    dashboardproviders.yaml:
-      apiVersion: 1
-      providers:
-      - name: 'default'
-        orgId: 1
-        folder: ''
-        type: file
-        disableDeletion: false
-        editable: true
-        options:
-          path: /var/lib/grafana/dashboards/default
-  dashboards:
-    default:
-      bind9:
-        gnetId: 12309
-        revision: 5
-        datasource: Prometheus
-      external-dns:
-        gnetId: 15038
-        revision: 3
-        datasource: Prometheus
-      traefik:
-        gnetId: 17347
-        revision: 9
-        datasource: Prometheus
   grafana.ini:
     analytics:
       check_for_updates: false
@@ -52,6 +26,14 @@ grafana:
   sidecar:
     alertmanager:
       enabled: false
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: ALL
+      provider:
+        allowUiUpdates: true
+        foldersFromFilesStructure: true
   testFramework:
     enabled: false
 
@@ -87,6 +69,10 @@ prometheus:
     hosts:
       - prometheus.local.dev
     ingressClassName: traefik
+    tls:
+      - hosts:
+          - prometheus.local.dev
+        secretName: prometheus-tls
   nodeSelector:
     kubernetes.io/os: linux
   prometheusSpec:
@@ -123,10 +109,6 @@ prometheus:
         resources:
           requests:
             storage: 5Gi
-    tls:
-      - hosts:
-          - prometheus.local.dev
-        secretName: prometheus-tls
 
 prometheus-node-exporter:
   nodeSelector:
