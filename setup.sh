@@ -52,10 +52,8 @@ helm upgrade kube-prometheus prometheus-community/kube-prometheus-stack \
 
 echo "Grafana is running on https://grafana.local.dev"
 
-echo -n "Username: "
-kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-user}" | base64 --decode ; echo
-echo -n "Password: "
-kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+echo "Username: $(kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-user}" | base64 --decode)"
+echo "Password: $(kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode)"
 
 echo "Prometheus is running on https://prometheus.local.dev"
 
@@ -202,7 +200,35 @@ helm upgrade elastic-operator elastic/eck-operator \
   --version 2.16.1 \
   --wait
 
-kubectl apply -f ./elastic/elastic.yaml
+kubectl apply -f ./elastic/elasticsearch.yaml
+
+kubectl wait --for=condition=reconciliationcomplete elasticsearch/elasticsearch -n monitoring --timeout=300s
+
+echo "Elasticsearch is running on https://elasticsearch.local.dev"
+
+echo "Username: elastic"
+echo "Password: $(kubectl get secret elasticsearch-es-elastic-user -n monitoring -o=jsonpath='{.data.elastic}' | base64 --decode)"
+
+kubectl apply -f ./elastic/kibana.yaml
+
+kubectl wait --for=jsonpath='{.status.health}'=green kibana/kibana -n monitoring --timeout=300s
+
+echo "Kibana is running on https://kibana.local.dev"
+
+echo "Username: elastic"
+echo "Password: $(kubectl get secret elasticsearch-es-elastic-user -n monitoring -o=jsonpath='{.data.elastic}' | base64 --decode)"
+
+kubectl apply -f ./elastic/apmserver.yaml
+
+kubectl wait --for=jsonpath='{.status.health}'=green apmserver/apm-server -n monitoring --timeout=300s
+
+kubectl apply -f ./elastic/fleetserver.yaml
+
+kubectl wait --for=jsonpath='{.status.health}'=green agent/fleet-server -n monitoring --timeout=300s
+
+kubectl apply -f ./elastic/elasticagent.yaml
+
+kubectl wait --for=jsonpath='{.status.health}'=green agent/elastic-agent -n monitoring --timeout=300s
 
 # PodInfo
 helm upgrade podinfo podinfo/podinfo \

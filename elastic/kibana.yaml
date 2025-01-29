@@ -1,0 +1,85 @@
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: kibana
+  namespace: monitoring
+spec:
+  version: 8.17.0
+  count: 1
+  elasticsearchRef:
+    name: elasticsearch
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: true
+  config:
+    server.publicBaseUrl: https://kibana.local.dev
+    xpack.fleet.agents.elasticsearch.hosts:
+      - http://elasticsearch-es-http.monitoring.svc.cluster.local:9200
+    xpack.fleet.agents.fleet_server.hosts:
+      - http://fleet-server-agent-http.monitoring.svc.cluster.local:8220
+    xpack.fleet.packages:
+    - name: apm
+      version: latest
+    - name: system
+      version: latest
+    - name: elastic_agent
+      version: latest
+    - name: fleet_server
+      version: latest
+    - name: kubernetes
+      version: latest
+    xpack.fleet.agentPolicies:
+    - name: Fleet Server on ECK policy
+      id: eck-fleet-server
+      namespace: monitoring
+      is_managed: true
+      monitoring_enabled:
+      - logs
+      - metrics
+      unenroll_timeout: 900
+      package_policies:
+      - name: fleet_server-1
+        id: fleet_server-1
+        package:
+          name: fleet_server
+    - name: Elastic Agent on ECK policy
+      id: eck-agent
+      namespace: monitoring
+      is_managed: true
+      monitoring_enabled:
+      - logs
+      - metrics
+      unenroll_timeout: 900
+      package_policies:
+      - package:
+          name: system
+        name: system-1
+      - package:
+          name: kubernetes
+        name: kubernetes-1
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kibana
+  namespace: monitoring
+  annotations:
+    external-dns.alpha.kubernetes.io/target: local.dev
+    cert-manager.io/cluster-issuer: ca-issuer
+spec:
+  rules:
+    - host: kibana.local.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kibana-kb-http
+                port:
+                  number: 5601
+  tls:
+    - hosts:
+        - kibana.local.dev
+      secretName: kibana-tls
