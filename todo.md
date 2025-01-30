@@ -1,6 +1,5 @@
 Make the deployments production ready:
   - [ ] otel collector
-  - [ ] elastic
 Fix any warning or errors in pods where possible:
   - [ ] otel collector
   - [ ] elastic

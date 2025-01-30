@@ -1,6 +1,10 @@
 apiVersion: kibana.k8s.elastic.co/v1
 kind: Kibana
 metadata:
+  labels:
+    app.kubernetes.io/instance: eck-stack
+    app.kubernetes.io/name: kibana
+    app.kubernetes.io/version: 8.17.0
   name: kibana
   namespace: monitoring
 spec:

@@ -1,6 +1,10 @@
 apiVersion: elasticsearch.k8s.elastic.co/v1
 kind: Elasticsearch
 metadata:
+  labels:
+    app.kubernetes.io/instance: eck-stack
+    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/version: 8.17.0
   name: elasticsearch
   namespace: monitoring
 spec:

@@ -1,6 +1,10 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  labels:
+    app.kubernetes.io/instance: eck-stack
+    app.kubernetes.io/name: fleet-server
+    app.kubernetes.io/version: 8.17.0
   name: fleet-server
   namespace: monitoring
 ---

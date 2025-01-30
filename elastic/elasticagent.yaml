@@ -1,6 +1,10 @@
 apiVersion: agent.k8s.elastic.co/v1alpha1
 kind: Agent
 metadata:
+  labels:
+    app.kubernetes.io/instance: eck-stack
+    app.kubernetes.io/name: elastic-agent
+    app.kubernetes.io/version: 8.17.0
   name: elastic-agent
   namespace: monitoring
 spec:

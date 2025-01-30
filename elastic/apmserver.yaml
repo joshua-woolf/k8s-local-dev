@@ -1,6 +1,10 @@
 apiVersion: apm.k8s.elastic.co/v1
 kind: ApmServer
 metadata:
+  labels:
+    app.kubernetes.io/instance: eck-stack
+    app.kubernetes.io/name: apm-server
+    app.kubernetes.io/version: 8.17.0
   name: apm-server
   namespace: monitoring
 spec:
