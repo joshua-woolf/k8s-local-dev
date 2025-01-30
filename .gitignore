@@ -278,7 +278,9 @@ dist
 # End of https://www.toptal.com/developers/gitignore/api/node
 
 *.crt
+*.csr
 *.key
+*.srl
 
 # Registry data
 registry/data/

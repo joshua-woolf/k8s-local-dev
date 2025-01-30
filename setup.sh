@@ -20,6 +20,50 @@ if ! security find-certificate -c "Local Dev Root" /Library/Keychains/System.key
   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "./certs/ca.crt"
 fi
 
+# Create Registry Certificate Private Key
+openssl genrsa -out "certs/registry.key" 2048
+
+# Create Registry Certificate Signing Request
+openssl req -new \
+  -key "certs/registry.key" \
+  -config "certs/registry.conf" \
+  -out "certs/registry.csr"
+
+# Sign the Registry Certificate with the Certificate Authority
+openssl x509 -req \
+  -in "certs/registry.csr" \
+  -CA "certs/ca.crt" \
+  -CAkey "certs/ca.key" \
+  -CAcreateserial \
+  -out "certs/registry.crt" \
+  -days 365 \
+  -sha256 \
+  -extfile "certs/registry-signing.conf" \
+  -extensions v3_ext
+
+# Container Registry
+if docker ps -f name=registry | grep -q registry; then
+  echo "Registry container already running"
+else
+  docker run -d --restart=always \
+    -v ./certs:/certs \
+    -v ./registry/data:/var/lib/registry \
+    -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
+    -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers='["Authorization", "Accept", "Cache-Control"]' \
+    -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods='["DELETE", "GET", "HEAD", "OPTIONS"]' \
+    -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin='["https://registry.local.dev"]' \
+    -e REGISTRY_HTTP_HEADERS_Access-Control-Expose-Headers='["Docker-Content-Digest"]' \
+    -e REGISTRY_HTTP_SECRET=345704b227b4dac03f0c06ddaecc7ab7349f7f0e33b8cc4cb4e73c4936c50d81 \
+    -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt \
+    -e REGISTRY_HTTP_TLS_KEY=/certs/registry.key \
+    -e REGISTRY_LOG_FORMATTER=json \
+    -e REGISTRY_LOG_LEVEL=info \
+    -e REGISTRY_STORAGE_DELETE_ENABLED=true \
+    -p 5001:443 --name registry --network kind registry:2.8.3@sha256:319881be2ee9e345d5837d15842a04268de6a139e23be42654fc7664fc6eaf52
+fi
+
+echo "Registry is running on https://registry.local.dev:5001"
+
 # Cluster
 if ! kind get clusters | grep -q "^kind$"; then
   kind create cluster --config kind-config.yaml
@@ -101,51 +145,7 @@ kubectl wait --namespace dns \
   --selector=app.kubernetes.io/name=external-dns \
   --timeout=300s
 
-# Container Registry
-kubectl apply -f ./registry/certificate.yaml
-
-echo "Waiting for Registry TLS certificate to be created..."
-max_attempts=30
-attempt=1
-while ! kubectl get secret -n registry registry-tls >/dev/null 2>&1; do
-  if [ $attempt -ge $max_attempts ]; then
-    echo "Timeout waiting for registry secret"
-    exit 1
-  fi
-  echo "Attempt $attempt/$max_attempts: Secret not found, waiting..."
-  sleep 10
-  ((attempt++))
-done
-
-echo "Extracting Registry TLS certificate and key..."
-kubectl get secret -n registry registry-tls -o jsonpath='{.data.tls\.crt}' | base64 -d > ./certs/registry.crt
-kubectl get secret -n registry registry-tls -o jsonpath='{.data.tls\.key}' | base64 -d > ./certs/registry.key
-
-if docker ps -f name=registry | grep -q registry; then
-  echo "Registry container already running"
-else
-  # Create registry data directory if it doesn't exist
-  mkdir -p ./registry/data
-
-  docker run -d --restart=always \
-    -v ./certs:/certs \
-    -v ./registry/data:/var/lib/registry \
-    -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
-    -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers='["Authorization", "Accept", "Cache-Control"]' \
-    -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods='["DELETE", "GET", "HEAD", "OPTIONS"]' \
-    -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin='["https://registry.local.dev"]' \
-    -e REGISTRY_HTTP_HEADERS_Access-Control-Expose-Headers='["Docker-Content-Digest"]' \
-    -e REGISTRY_HTTP_SECRET=345704b227b4dac03f0c06ddaecc7ab7349f7f0e33b8cc4cb4e73c4936c50d81 \
-    -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt \
-    -e REGISTRY_HTTP_TLS_KEY=/certs/registry.key \
-    -e REGISTRY_LOG_FORMATTER=json \
-    -e REGISTRY_LOG_LEVEL=info \
-    -e REGISTRY_STORAGE_DELETE_ENABLED=true \
-    -p 5001:443 --name registry --network kind registry:2.8.3@sha256:319881be2ee9e345d5837d15842a04268de6a139e23be42654fc7664fc6eaf52
-fi
-
-echo "Registry is running on https://registry.local.dev:5001"
-
+# Container Registry UI
 helm upgrade registry-ui joxit/docker-registry-ui \
   --create-namespace \
   --install \

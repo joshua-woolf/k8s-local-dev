@@ -23,3 +23,4 @@ Create dashboard app.
 Cleanup yaml formatting.
 Convert yamls to helm charts.
 Automate host DNS setup.
+Add image scanning.
