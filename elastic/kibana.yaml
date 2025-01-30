@@ -5,6 +5,7 @@ metadata:
   namespace: monitoring
 spec:
   version: 8.17.0
+  image: registry.local.dev:5001/docker.elastic.co/kibana/kibana:8.17.0
   count: 1
   elasticsearchRef:
     name: elasticsearch

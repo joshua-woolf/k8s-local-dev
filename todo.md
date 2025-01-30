@@ -14,7 +14,6 @@ Add dashboards to Grafana:
 Look at prometheus alerts.
 Look at getting elastic TLS working.
 Look at getting alert manager working.
-Add local image cache.
 Change entire setup to use flux for deployment.
 Switch to using cloud-provider-kind to setup a load balancer rather than using node ports.
 Look at using a service mesh.

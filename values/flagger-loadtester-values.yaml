@@ -1,3 +1,7 @@
+image:
+  repository: registry.local.dev:5001/ghcr.io/fluxcd/flagger-loadtester
+  tag: 0.34.0
+
 nodeSelector:
   kubernetes.io/os: linux
 

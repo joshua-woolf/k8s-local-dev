@@ -1,10 +1,22 @@
 alertmanager:
   enabled: false
 
+crds:
+  upgradeJob:
+    image:
+      busybox:
+        registry: registry.local.dev:5001
+        repository: docker.io/busybox
+        tag: 1.37.0
+
 grafana:
   grafana.ini:
     analytics:
       check_for_updates: false
+  image:
+    registry: registry.local.dev:5001
+    repository: docker.io/grafana/grafana
+    tag: 11.4.0
   ingress:
     annotations:
       cert-manager.io/cluster-issuer: ca-issuer
@@ -17,6 +29,11 @@ grafana:
       - hosts:
           - grafana.local.dev
         secretName: grafana-tls
+  initChownData:
+    image:
+      registry: registry.local.dev:5001
+      repository: docker.io/library/busybox
+      tag: 1.31.1
   nodeSelector:
     kubernetes.io/os: linux
   persistence:
@@ -33,6 +50,10 @@ grafana:
       provider:
         allowUiUpdates: true
         foldersFromFilesStructure: true
+    image:
+      registry: registry.local.dev:5001
+      repository: quay.io/kiwigrid/k8s-sidecar
+      tag: 1.28.0
   testFramework:
     enabled: false
 
@@ -100,6 +121,10 @@ prometheus:
         - source_labels: [__meta_kubernetes_pod_name]
           action: replace
           target_label: kubernetes_pod_name
+    image:
+      registry: registry.local.dev:5001
+      repository: quay.io/prometheus/prometheus
+      tag: v3.1.0
   storageSpec:
     volumeClaimTemplate:
       spec:
@@ -110,9 +135,33 @@ prometheus:
             storage: 5Gi
 
 prometheus-node-exporter:
+  image:
+    registry: registry.local.dev:5001
+    repository: quay.io/prometheus/node-exporter
+    tag: v1.8.2
   nodeSelector:
     kubernetes.io/os: linux
 
 prometheusOperator:
+  admissionWebhooks:
+    deployment:
+      image:
+        registry: registry.local.dev:5001
+        repository: quay.io/prometheus-operator/admission-webhook
+        tag: v0.79.2
+    patch:
+      image:
+        registry: registry.local.dev:5001
+        repository: registry.k8s.io/ingress-nginx/kube-webhook-certgen
+        tag: v1.5.1
+  image:
+    registry: registry.local.dev:5001
+    repository: quay.io/prometheus-operator/prometheus-operator
+    tag: v0.79.2
   nodeSelector:
     kubernetes.io/os: linux
+  prometheusConfigReloader:
+    image:
+      registry: registry.local.dev:5001
+      repository: quay.io/prometheus-operator/prometheus-config-reloader
+      tag: v0.79.2

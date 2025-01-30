@@ -7,6 +7,11 @@ commonLabels:
 
 globalArguments:
 
+image:
+  registry: registry.local.dev:5001
+  repository: docker.io/traefik
+  tag: v3.3.2
+
 ingressRoute:
   dashboard:
     annotations:

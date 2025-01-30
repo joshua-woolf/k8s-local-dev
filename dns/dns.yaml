@@ -142,7 +142,7 @@ spec:
     spec:
       containers:
         - name: bind9
-          image: "ubuntu/bind9:9.18-22.04_beta@sha256:38fc0495351783f1ab2fa63865aa00a2a609dc50dadf59e8ed6235e48cdaba6f"
+          image: "registry.local.dev:5001/ubuntu/bind9:9.18-22.04_beta"
           command: ["/usr/sbin/named"]
           args: ["-g", "-c", "/etc/bind/named.conf"]
           ports:
@@ -178,7 +178,7 @@ spec:
             - name: bind-logs
               mountPath: /var/log/named
         - name: bind-exporter
-          image: "prometheuscommunity/bind-exporter:v0.6.0"
+          image: "registry.local.dev:5001/prometheuscommunity/bind-exporter:v0.6.0"
           args:
             - --bind.stats-groups=server,view
             - --bind.stats-url=http://localhost:8053/

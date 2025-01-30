@@ -94,7 +94,7 @@ spec:
         runAsUser: 65534
       containers:
       - name: external-dns
-        image: registry.k8s.io/external-dns/external-dns:v0.15.1@sha256:4f3ba4c2bd28030caad05bb7b47fbf47549a46d5e8443b74f0be463550b4fc2b
+        image: registry.local.dev:5001/registry.k8s.io/external-dns/external-dns:v0.15.1
         args:
         - --registry=txt
         - --txt-prefix=external-dns-

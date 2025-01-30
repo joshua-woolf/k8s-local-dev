@@ -64,6 +64,8 @@ fi
 
 echo "Registry is running on https://registry.local.dev:5001"
 
+./scripts/cache-images.sh
+
 # Cluster
 if ! kind get clusters | grep -q "^kind$"; then
   kind create cluster --config kind-config.yaml

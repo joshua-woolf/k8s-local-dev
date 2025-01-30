@@ -12,5 +12,6 @@ spec:
         disabled: true
   elasticsearchRef:
     name: elasticsearch
+  image: registry.local.dev:5001/docker.elastic.co/apm/apm-server:8.17.0
   kibanaRef:
     name: kibana

@@ -1,3 +1,7 @@
+image:
+  repository: registry.local.dev:5001/ghcr.io/fluxcd/flagger
+  tag: 1.40.0
+
 meshProvider: traefik
 
 metricsServer: http://kube-prometheus-kube-prome-prometheus.monitoring.svc.cluster.local:9090
