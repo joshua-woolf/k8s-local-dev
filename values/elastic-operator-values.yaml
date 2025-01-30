@@ -1,6 +1,5 @@
 image:
   repository: registry.local.dev:5001/docker.elastic.co/eck/eck-operator
   tag: 2.16.1
-
 nodeSelector:
   kubernetes.io/os: linux

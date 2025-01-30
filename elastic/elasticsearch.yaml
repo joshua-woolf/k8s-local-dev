@@ -8,58 +8,62 @@ metadata:
   name: elasticsearch
   namespace: monitoring
 spec:
-  version: 8.17.0
   image: registry.local.dev:5001/docker.elastic.co/elasticsearch/elasticsearch:8.17.0
   http:
     tls:
       selfSignedCertificate:
         disabled: true
   nodeSets:
-  - name: default
-    count: 1
-    config:
-      node.store.allow_mmap: false
-      xpack.monitoring.collection.enabled: true
-    podTemplate:
-      spec:
-        containers:
-        - name: elasticsearch
-          env:
-          - name: ES_JAVA_OPTS
-            value: -XX:UseSVE=0
-          - name: CLI_JAVA_OPTS
-            value: -XX:UseSVE=0
-    volumeClaimTemplates:
-    - metadata:
-        name: elasticsearch-data
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 10Gi
-        storageClassName: standard
+    - config:
+        node.store.allow_mmap: false
+        xpack.monitoring.collection.enabled: true
+      count: 1
+      name: default
+      podTemplate:
+        spec:
+          containers:
+            - env:
+                - name: ES_JAVA_OPTS
+                  value: -XX:UseSVE=0
+                - name: CLI_JAVA_OPTS
+                  value: -XX:UseSVE=0
+              name: elasticsearch
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 10Gi
+            storageClassName: standard
+  version: 8.17.0
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: ca-issuer
+    external-dns.alpha.kubernetes.io/target: local.dev
+  labels:
+    app.kubernetes.io/instance: eck-stack
+    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/version: 8.17.0
   name: elasticsearch
   namespace: monitoring
-  annotations:
-    external-dns.alpha.kubernetes.io/target: local.dev
-    cert-manager.io/cluster-issuer: ca-issuer
 spec:
   rules:
     - host: elasticsearch.local.dev
       http:
         paths:
-          - path: /
-            pathType: Prefix
-            backend:
+          - backend:
               service:
                 name: elasticsearch-es-http
                 port:
                   number: 9200
+            path: /
+            pathType: Prefix
   tls:
     - hosts:
         - elasticsearch.local.dev

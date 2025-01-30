@@ -1,12 +1,9 @@
 command:
   name: otelcol-k8s
-
 image:
   repository: registry.local.dev:5001/otel/opentelemetry-collector-k8s
   tag: 0.117.0
-
 mode: deployment
-
 resources:
   limits:
     cpu: 250m

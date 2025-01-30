@@ -1,16 +1,12 @@
 image:
   repository: registry.local.dev:5001/ghcr.io/fluxcd/flagger-loadtester
   tag: 0.34.0
-
 nodeSelector:
   kubernetes.io/os: linux
-
 podLabels:
   app.kubernetes.io/instance: flagger-loadtester
   app.kubernetes.io/version: 0.34.0
-
 rbac:
   create: true
-
 securityContext:
   enabled: true

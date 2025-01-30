@@ -1,17 +1,13 @@
 additionalArguments:
   - --entrypoints.web.http.encodequerysemicolons=true
   - --entrypoints.websecure.http.encodequerysemicolons=true
-
 commonLabels:
   app.kubernetes.io/version: 34.1.0
-
 globalArguments:
-
 image:
   registry: registry.local.dev:5001
   repository: docker.io/traefik
   tag: v3.3.2
-
 ingressRoute:
   dashboard:
     annotations:
@@ -25,17 +21,14 @@ ingressRoute:
       secretName: traefik-tls
       domains:
         - main: traefik.local.dev
-
 metrics:
   prometheus:
     serviceMonitor:
-      enabled: true
       additionalLabels:
         release: kube-prometheus
-
+      enabled: true
 nodeSelector:
   kubernetes.io/os: linux
-
 ports:
   web:
     forwardedHeaders:
@@ -50,7 +43,6 @@ ports:
     nodePort: 30443
     tls:
       enabled: true
-
 providers:
   kubernetesCRD:
     allowCrossNamespace: true
@@ -59,6 +51,5 @@ providers:
   kubernetesIngress:
     allowEmptyServices: true
     allowExternalNameServices: true
-
 service:
   type: NodePort

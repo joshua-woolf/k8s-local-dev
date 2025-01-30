@@ -1,6 +1,6 @@
 apiVersion: v2
-name: grafana-dashboards
+appVersion: 1.0.0
 description: Custom Grafana dashboards for monitoring
+name: grafana-dashboards
 type: application
 version: 0.1.0
-appVersion: "1.0.0"

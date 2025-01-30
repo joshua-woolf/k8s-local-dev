@@ -1,21 +1,11 @@
 image:
-  repository: registry.local.dev:5001/openpolicyagent/gatekeeper
   crdRepository: registry.local.dev:5001/openpolicyagent/gatekeeper-crds
+  repository: registry.local.dev:5001/openpolicyagent/gatekeeper
   release: v3.18.2
-preInstall:
-  crdRepository:
-    image:
-      repository: registry.local.dev:5001/openpolicyagent/gatekeeper-crds
-      tag: v3.18.2
 podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/path: /metrics
   prometheus.io/port: "8888"
-postUpgrade:
-  labelNamespace:
-    image:
-      repository: registry.local.dev:5001/openpolicyagent/gatekeeper-crds
-      tag: v3.18.2
 postInstall:
   labelNamespace:
     image:
@@ -25,6 +15,16 @@ postInstall:
     image:
       repository: registry.local.dev:5001/curlimages/curl
       tag: 7.83.1
+postUpgrade:
+  labelNamespace:
+    image:
+      repository: registry.local.dev:5001/openpolicyagent/gatekeeper-crds
+      tag: v3.18.2
+preInstall:
+  crdRepository:
+    image:
+      repository: registry.local.dev:5001/openpolicyagent/gatekeeper-crds
+      tag: v3.18.2
 preUninstall:
   deleteWebhookConfigurations:
     image:

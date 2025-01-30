@@ -18,5 +18,5 @@ Switch to using cloud-provider-kind to setup a load balancer rather than using n
 Look at using a service mesh.
 Look at adding network policies.
 Create dashboard app.
-Cleanup yaml formatting.
 Convert yamls to helm charts.
+Color logs

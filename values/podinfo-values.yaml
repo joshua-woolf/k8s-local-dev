@@ -16,11 +16,8 @@ ingress:
     - hosts:
         - podinfo.local.dev
       secretName: podinfo-tls
-
 nodeSelector:
   kubernetes.io/os: linux
-
 replicaCount: 1
-
 serviceAccount:
   create: true

@@ -8,15 +8,6 @@ metadata:
   name: kibana
   namespace: monitoring
 spec:
-  version: 8.17.0
-  image: registry.local.dev:5001/docker.elastic.co/kibana/kibana:8.17.0
-  count: 1
-  elasticsearchRef:
-    name: elasticsearch
-  http:
-    tls:
-      selfSignedCertificate:
-        disabled: true
   config:
     server.publicBaseUrl: https://kibana.local.dev
     xpack.fleet.agents.elasticsearch.hosts:
@@ -24,45 +15,54 @@ spec:
     xpack.fleet.agents.fleet_server.hosts:
       - http://fleet-server-agent-http.monitoring.svc.cluster.local:8220
     xpack.fleet.packages:
-    - name: apm
-      version: latest
-    - name: system
-      version: latest
-    - name: elastic_agent
-      version: latest
-    - name: fleet_server
-      version: latest
-    - name: kubernetes
-      version: latest
+      - name: apm
+        version: latest
+      - name: elastic_agent
+        version: latest
+      - name: fleet_server
+        version: latest
+      - name: kubernetes
+        version: latest
+      - name: system
+        version: latest
     xpack.fleet.agentPolicies:
-    - name: Fleet Server on ECK policy
-      id: eck-fleet-server
-      namespace: monitoring
-      is_managed: true
-      monitoring_enabled:
-      - logs
-      - metrics
-      unenroll_timeout: 900
-      package_policies:
-      - name: fleet_server-1
-        id: fleet_server-1
-        package:
-          name: fleet_server
-    - name: Elastic Agent on ECK policy
-      id: eck-agent
-      namespace: monitoring
-      is_managed: true
-      monitoring_enabled:
-      - logs
-      - metrics
-      unenroll_timeout: 900
-      package_policies:
-      - package:
-          name: system
-        name: system-1
-      - package:
-          name: kubernetes
-        name: kubernetes-1
+      - id: eck-fleet-server
+        is_managed: true
+        monitoring_enabled:
+          - logs
+          - metrics
+        name: Fleet Server on ECK policy
+        namespace: monitoring
+        package_policies:
+          - id: fleet_server-1
+            name: fleet_server-1
+            package:
+              name: fleet_server
+        unenroll_timeout: 900
+      - id: eck-agent
+        is_managed: true
+        monitoring_enabled:
+          - logs
+          - metrics
+        name: Elastic Agent on ECK policy
+        namespace: monitoring
+        package_policies:
+          - name: system-1
+            package:
+              name: system
+          - name: kubernetes-1
+            package:
+              name: kubernetes
+        unenroll_timeout: 900
+  count: 1
+  elasticsearchRef:
+    name: elasticsearch
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: true
+  image: registry.local.dev:5001/docker.elastic.co/kibana/kibana:8.17.0
+  version: 8.17.0
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -70,20 +70,20 @@ metadata:
   name: kibana
   namespace: monitoring
   annotations:
-    external-dns.alpha.kubernetes.io/target: local.dev
     cert-manager.io/cluster-issuer: ca-issuer
+    external-dns.alpha.kubernetes.io/target: local.dev
 spec:
   rules:
     - host: kibana.local.dev
       http:
         paths:
-          - path: /
-            pathType: Prefix
-            backend:
+          - backend:
               service:
                 name: kibana-kb-http
                 port:
                   number: 5601
+            path: /
+            pathType: Prefix
   tls:
     - hosts:
         - kibana.local.dev

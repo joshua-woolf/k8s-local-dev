@@ -8,14 +8,14 @@ metadata:
   name: apm-server
   namespace: monitoring
 spec:
-  version: 8.17.0
   count: 1
+  elasticsearchRef:
+    name: elasticsearch
   http:
     tls:
       selfSignedCertificate:
         disabled: true
-  elasticsearchRef:
-    name: elasticsearch
   image: registry.local.dev:5001/docker.elastic.co/apm/apm-server:8.17.0
   kibanaRef:
     name: kibana
+  version: 8.17.0

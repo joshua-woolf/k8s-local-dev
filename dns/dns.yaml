@@ -6,12 +6,12 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: bind9
-  namespace: dns
   labels:
     app.kubernetes.io/instance: bind9
     app.kubernetes.io/name: bind9
     app.kubernetes.io/version: 9.18-22.04_beta
+  name: bind9
+  namespace: dns
 data:
   named.conf.options: |
     acl internal {
@@ -122,12 +122,12 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: bind9
-  namespace: dns
   labels:
     app.kubernetes.io/instance: bind9
     app.kubernetes.io/name: bind9
     app.kubernetes.io/version: 9.18-22.04_beta
+  name: bind9
+  namespace: dns
 spec:
   replicas: 1
   selector:
@@ -141,105 +141,109 @@ spec:
         app.kubernetes.io/version: 9.18-22.04_beta
     spec:
       containers:
-        - name: bind9
-          image: "registry.local.dev:5001/ubuntu/bind9:9.18-22.04_beta"
-          command: ["/usr/sbin/named"]
-          args: ["-g", "-c", "/etc/bind/named.conf"]
-          ports:
-            - name: dns-tcp
-              containerPort: 53
-              protocol: TCP
-            - name: dns-udp
-              containerPort: 53
-              protocol: UDP
-            - name: stats
-              containerPort: 8053
-              protocol: TCP
+        - command:
+            - /usr/sbin/named
+          args:
+            - -g
+            - -c
+            - /etc/bind/named.conf
+          image: registry.local.dev:5001/ubuntu/bind9:9.18-22.04_beta
           livenessProbe:
-            tcpSocket:
-              port: 53
             initialDelaySeconds: 10
             periodSeconds: 10
-          readinessProbe:
             tcpSocket:
               port: 53
+          name: bind9
+          ports:
+            - containerPort: 53
+              name: dns-tcp
+              protocol: TCP
+            - containerPort: 53
+              name: dns-udp
+              protocol: UDP
+            - containerPort: 8053
+              name: stats
+              protocol: TCP
+          readinessProbe:
             initialDelaySeconds: 5
             periodSeconds: 10
+            tcpSocket:
+              port: 53
           volumeMounts:
-            - name: config
-              mountPath: /etc/bind/named.conf.options
+            - mountPath: /etc/bind/named.conf.options
+              name: config
               subPath: named.conf.options
-            - name: config
-              mountPath: /etc/bind/named.conf.local
+            - mountPath: /etc/bind/named.conf.local
+              name: config
               subPath: named.conf.local
-            - name: config
-              mountPath: /var/cache/bind/local.dev.zone
+            - mountPath: /var/cache/bind/local.dev.zone
+              name: config
               subPath: local.dev.zone
-            - name: bind-logs
-              mountPath: /var/log/named
-        - name: bind-exporter
-          image: "registry.local.dev:5001/prometheuscommunity/bind-exporter:v0.6.0"
-          args:
+            - mountPath: /var/log/named
+              name: bind-logs
+        - args:
             - --bind.stats-groups=server,view
             - --bind.stats-url=http://localhost:8053/
             - --bind.timeout=20s
             - --web.listen-address=:9119
+          image: registry.local.dev:5001/prometheuscommunity/bind-exporter:v0.6.0
+          name: bind-exporter
           ports:
-            - name: metrics
-              containerPort: 9119
+            - containerPort: 9119
+              name: metrics
       volumes:
-        - name: config
-          configMap:
+        - configMap:
             name: bind9
-        - name: bind-logs
-          emptyDir: {}
+          name: config
+        - emptyDir: {}
+          name: bind-logs
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: bind9
-  namespace: dns
   labels:
     app.kubernetes.io/instance: bind9
     app.kubernetes.io/name: bind9
     app.kubernetes.io/version: 9.18-22.04_beta
+  name: bind9
+  namespace: dns
 spec:
-  type: NodePort
   ports:
     - name: dns-udp
+      nodePort: 30053
+      port: 53
       protocol: UDP
-      port: 53
       targetPort: 53
-      nodePort: 30053
     - name: dns-tcp
-      protocol: TCP
-      port: 53
-      targetPort: 53
       nodePort: 30053
+      port: 53
+      protocol: TCP
+      targetPort: 53
     - name: stats
-      protocol: TCP
-      port: 8053
       targetPort: 8053
-    - name: metrics
+      port: 8053
       protocol: TCP
+    - name: metrics
       port: 9119
+      protocol: TCP
       targetPort: 9119
   selector:
     app.kubernetes.io/name: bind9
+  type: NodePort
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: bind9
-  namespace: dns
   labels:
     app.kubernetes.io/instance: bind9
     app.kubernetes.io/name: bind9
     app.kubernetes.io/version: 9.18-22.04_beta
     release: kube-prometheus
+  name: bind9
+  namespace: dns
 spec:
   endpoints:
-  - port: metrics
+    - port: metrics
   jobLabel: bind9
   selector:
     matchLabels:
