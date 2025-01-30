@@ -1,38 +1,38 @@
-kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-- role: control-plane
-  extraMounts:
-    - hostPath: /Users/joshuaw/Documents/GitHub/ai-lab/certs/ca.crt
-      containerPath: /usr/local/share/ca-certificates/ca.crt
-  extraPortMappings:
-    - containerPort: 30080
-      hostPort: 80
-    - containerPort: 30443
-      hostPort: 443
-    - containerPort: 30053
-      hostPort: 53
-      protocol: UDP
-    - containerPort: 30053
-      hostPort: 53
-      protocol: TCP
-  image: kindest/node:v1.32.0@sha256:c48c62eac5da28cdadcf560d1d8616cfa6783b58f0d94cf63ad1bf49600cb027
-- role: worker
-  extraMounts:
-    - hostPath: /Users/joshuaw/Documents/GitHub/ai-lab/certs/ca.crt
-      containerPath: /usr/local/share/ca-certificates/ca.crt
-  image: kindest/node:v1.32.0@sha256:c48c62eac5da28cdadcf560d1d8616cfa6783b58f0d94cf63ad1bf49600cb027
-- role: worker
-  extraMounts:
-    - hostPath: /Users/joshuaw/Documents/GitHub/ai-lab/certs/ca.crt
-      containerPath: /usr/local/share/ca-certificates/ca.crt
-  image: kindest/node:v1.32.0@sha256:c48c62eac5da28cdadcf560d1d8616cfa6783b58f0d94cf63ad1bf49600cb027
-- role: worker
-  extraMounts:
-    - hostPath: /Users/joshuaw/Documents/GitHub/ai-lab/certs/ca.crt
-      containerPath: /usr/local/share/ca-certificates/ca.crt
-  image: kindest/node:v1.32.0@sha256:c48c62eac5da28cdadcf560d1d8616cfa6783b58f0d94cf63ad1bf49600cb027
+kind: Cluster
 containerdConfigPatches:
-- |-
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."registry.local.dev:5001"]
-    endpoint = ["https://registry:443"]
+  - |-
+    [plugins."io.containerd.grpc.v1.cri".registry.mirrors."registry.local.dev:5001"]
+      endpoint = ["https://registry:443"]
+nodes:
+  - role: control-plane
+    extraMounts:
+      - containerPath: /usr/local/share/ca-certificates/ca.crt
+        hostPath: /Users/joshuaw/Documents/GitHub/ai-lab/certs/ca.crt
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 80
+      - containerPort: 30443
+        hostPort: 443
+      - containerPort: 30053
+        hostPort: 53
+        protocol: UDP
+      - containerPort: 30053
+        hostPort: 53
+        protocol: TCP
+    image: kindest/node:v1.32.0@sha256:c48c62eac5da28cdadcf560d1d8616cfa6783b58f0d94cf63ad1bf49600cb027
+  - role: worker
+    extraMounts:
+      - containerPath: /usr/local/share/ca-certificates/ca.crt
+        hostPath: /Users/joshuaw/Documents/GitHub/ai-lab/certs/ca.crt
+    image: kindest/node:v1.32.0@sha256:c48c62eac5da28cdadcf560d1d8616cfa6783b58f0d94cf63ad1bf49600cb027
+  - role: worker
+    extraMounts:
+      - containerPath: /usr/local/share/ca-certificates/ca.crt
+        hostPath: /Users/joshuaw/Documents/GitHub/ai-lab/certs/ca.crt
+    image: kindest/node:v1.32.0@sha256:c48c62eac5da28cdadcf560d1d8616cfa6783b58f0d94cf63ad1bf49600cb027
+  - role: worker
+    extraMounts:
+      - containerPath: /usr/local/share/ca-certificates/ca.crt
+        hostPath: /Users/joshuaw/Documents/GitHub/ai-lab/certs/ca.crt
+    image: kindest/node:v1.32.0@sha256:c48c62eac5da28cdadcf560d1d8616cfa6783b58f0d94cf63ad1bf49600cb027

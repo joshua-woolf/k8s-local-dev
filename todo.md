@@ -21,3 +21,4 @@ Look at using a service mesh.
 Look at adding network policies.
 Create dashboard app.
 Cleanup yaml formatting.
+Convert yamls to helm charts
