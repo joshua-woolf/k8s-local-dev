@@ -124,8 +124,12 @@ kubectl get secret -n registry registry-tls -o jsonpath='{.data.tls\.key}' | bas
 if docker ps -f name=registry | grep -q registry; then
   echo "Registry container already running"
 else
+  # Create registry data directory if it doesn't exist
+  mkdir -p ./registry/data
+
   docker run -d --restart=always \
     -v ./certs:/certs \
+    -v ./registry/data:/var/lib/registry \
     -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
     -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers='["Authorization", "Accept", "Cache-Control"]' \
     -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods='["DELETE", "GET", "HEAD", "OPTIONS"]' \

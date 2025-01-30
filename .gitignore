@@ -279,3 +279,6 @@ dist
 
 *.crt
 *.key
+
+# Registry data
+registry/data/
