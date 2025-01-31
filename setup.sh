@@ -198,47 +198,6 @@ kubectl wait --namespace dns \
   --selector=app.kubernetes.io/name=external-dns \
   --timeout=300s
 
-# Container Registry UI
-helm upgrade registry-ui joxit/docker-registry-ui \
-  --create-namespace \
-  --install \
-  --namespace registry \
-  --values "./values/registry-ui-values.yaml" \
-  --version 1.1.3 \
-  --wait
-
-echo "Registry UI is running on https://registry.local.dev"
-
-# Traefik
-kubectl apply -f ./traefik/certificate.yaml
-
-helm upgrade traefik traefik/traefik \
-  --create-namespace \
-  --install \
-  --namespace traefik \
-  --values "./values/traefik-values.yaml" \
-  --version 34.1.0 \
-  --wait
-
-echo "Traefik Dashboard is running on https://traefik.local.dev"
-
-## Flagger
-helm upgrade flagger flagger/flagger \
-  --create-namespace \
-  --install \
-  --namespace flagger \
-  --values "./values/flagger-values.yaml" \
-  --version 1.40.0 \
-  --wait
-
-helm upgrade flagger-loadtester flagger/loadtester \
-  --create-namespace \
-  --install \
-  --namespace flagger \
-  --values "./values/flagger-loadtester-values.yaml" \
-  --version 0.34.0 \
-  --wait
-
 # Elastic Stack
 helm upgrade elastic-operator elastic/eck-operator \
   --create-namespace \
@@ -288,6 +247,47 @@ helm upgrade otel-collector open-telemetry/opentelemetry-collector \
   --values "./values/otel-collector-values.yaml" \
   --set config.exporters.otlp.headers.Authorization="Bearer ${ELASTIC_APM_SECRET_TOKEN}" \
   --version 0.111.2 \
+  --wait
+
+# Traefik
+kubectl apply -f ./traefik/certificate.yaml
+
+helm upgrade traefik traefik/traefik \
+  --create-namespace \
+  --install \
+  --namespace traefik \
+  --values "./values/traefik-values.yaml" \
+  --version 34.1.0 \
+  --wait
+
+echo "Traefik Dashboard is running on https://traefik.local.dev"
+
+# Container Registry UI
+helm upgrade registry-ui joxit/docker-registry-ui \
+  --create-namespace \
+  --install \
+  --namespace registry \
+  --values "./values/registry-ui-values.yaml" \
+  --version 1.1.3 \
+  --wait
+
+echo "Registry UI is running on https://registry.local.dev"
+
+## Flagger
+helm upgrade flagger flagger/flagger \
+  --create-namespace \
+  --install \
+  --namespace flagger \
+  --values "./values/flagger-values.yaml" \
+  --version 1.40.0 \
+  --wait
+
+helm upgrade flagger-loadtester flagger/loadtester \
+  --create-namespace \
+  --install \
+  --namespace flagger \
+  --values "./values/flagger-loadtester-values.yaml" \
+  --version 0.34.0 \
   --wait
 
 # PodInfo
