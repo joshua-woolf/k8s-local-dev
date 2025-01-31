@@ -92,6 +92,7 @@ declare -a IMAGES=(
   "quay.io/jetstack/cert-manager-startupapicheck:v1.16.3"
   "quay.io/jetstack/cert-manager-webhook:v1.16.3"
   "quay.io/kiwigrid/k8s-sidecar:1.28.0"
+  "quay.io/prometheus/alertmanager:v0.28.0"
   "quay.io/prometheus/node-exporter:v1.8.2"
   "quay.io/prometheus/prometheus:v3.1.0"
   "quay.io/prometheus-operator/admission-webhook:v0.79.2"
