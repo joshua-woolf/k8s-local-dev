@@ -1,10 +1,68 @@
-command:
-  name: otelcol-k8s
+config:
+  exporters:
+    debug:
+      verbosity: detailed
+    otlp:
+      endpoint: apm-server-apm-http.monitoring.svc.cluster.local:8200
+      headers:
+        Authorization: "Bearer ${env:ELASTIC_APM_SECRET_TOKEN}"
+      tls:
+        insecure: true
+  processors:
+    memory_limiter:
+      check_interval: 1s
+      limit_mib: 2000
+  service:
+    telemetry:
+      metrics:
+        address:
+        readers:
+          - pull:
+              exporter:
+                prometheus:
+                  host: '0.0.0.0'
+                  port: 8888
+    pipelines:
+      logs:
+        exporters:
+          - debug
+          - otlp
+      metrics:
+        exporters:
+          - debug
+          - otlp
+        receivers:
+          - otlp
+      traces:
+        exporters:
+          - debug
+          - otlp
+        receivers:
+          - otlp
 image:
-  repository: registry.local.dev:5001/otel/opentelemetry-collector-k8s
-  tag: 0.117.0
+  repository: registry.local.dev:5001/ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+  tag: 0.118.0
 mode: deployment
-resources:
-  limits:
-    cpu: 250m
-    memory: 512Mi
+nodeSelector:
+  kubernetes.io/os: linux
+podSecurityContext:
+  fsGroup: 10000
+  seccompProfile:
+    type: RuntimeDefault
+ports:
+  metrics:
+    enabled: true
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+  runAsGroup: 10000
+  runAsNonRoot: true
+  runAsUser: 10000
+serviceMonitor:
+  enabled: true
+  extraLabels:
+    release: kube-prometheus
+

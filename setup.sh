@@ -80,11 +80,11 @@ declare -a IMAGES=(
   "docker.io/traefik:v3.3.2"
   "ghcr.io/fluxcd/flagger:1.40.0"
   "ghcr.io/fluxcd/flagger-loadtester:0.34.0"
+  "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.118.0"
   "ghcr.io/stefanprodan/podinfo:6.7.1"
   "joxit/docker-registry-ui:2.5.2"
   "openpolicyagent/gatekeeper:v3.18.2"
   "openpolicyagent/gatekeeper-crds:v3.18.2"
-  "otel/opentelemetry-collector-k8s:0.117.0"
   "prometheuscommunity/bind-exporter:v0.6.0"
   "quay.io/jetstack/cert-manager-acmesolver:v1.16.3"
   "quay.io/jetstack/cert-manager-cainjector:v1.16.3"
@@ -221,15 +221,6 @@ helm upgrade traefik traefik/traefik \
 
 echo "Traefik Dashboard is running on https://traefik.local.dev"
 
-# OpenTelemetry Collector
-helm upgrade otel-collector open-telemetry/opentelemetry-collector \
-  --create-namespace \
-  --install \
-  --namespace monitoring \
-  --values "./values/otel-collector-values.yaml" \
-  --version 0.111.2 \
-  --wait
-
 ## Flagger
 helm upgrade flagger flagger/flagger \
   --create-namespace \
@@ -285,6 +276,18 @@ kubectl wait --for=jsonpath='{.status.health}'=green agent/fleet-server -n monit
 kubectl apply -f ./elastic/elasticagent.yaml
 
 kubectl wait --for=jsonpath='{.status.health}'=green agent/elastic-agent -n monitoring --timeout=300s
+
+# OpenTelemetry Collector
+ELASTIC_APM_SECRET_TOKEN=$(kubectl get secret apm-server-apm-token -n monitoring -o=jsonpath='{.data.secret-token}' | base64 --decode)
+
+helm upgrade otel-collector open-telemetry/opentelemetry-collector \
+  --create-namespace \
+  --install \
+  --namespace monitoring \
+  --values "./values/otel-collector-values.yaml" \
+  --set config.exporters.otlp.headers.Authorization="Bearer ${ELASTIC_APM_SECRET_TOKEN}" \
+  --version 0.111.2 \
+  --wait
 
 # PodInfo
 helm upgrade podinfo podinfo/podinfo \
