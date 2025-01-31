@@ -1,4 +1,3 @@
-Fix any warning or errors in elastic pods.
 Add dashboards to Grafana for flagger and load tester.
 Look at getting elastic and otel TLS working.
 Get apps to produce telemetry.
