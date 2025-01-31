@@ -9,6 +9,5 @@ Convert raw yamls to helm charts.
 Color logs
 Refine dashboards.
 Convert script to powershell.
-Check out gateway api.
 Look at adding resource requests and limits.
 Look at Traefik OTEL Collector integration.
