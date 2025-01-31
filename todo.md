@@ -10,7 +10,6 @@ Create dashboard app.
 Convert raw yamls to helm charts.
 Color logs
 Refine dashboards.
-Cleanup containers used when scanning.
 Convert script to powershell.
 Check out gateway api.
 Look at adding resource requests and limits.

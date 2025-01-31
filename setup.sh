@@ -111,7 +111,7 @@ for source_image in "${IMAGES[@]}"; do
     echo "Processing image: $source_image"
 
     docker pull "$source_image"
-    docker run -v "/var/run/docker.sock:/var/run/docker.sock" -v "$HOME/Library/Caches:/root/.cache/" ghcr.io/aquasecurity/trivy:0.59.0 image "$source_image"
+    docker run --rm -v "/var/run/docker.sock:/var/run/docker.sock" -v "$HOME/Library/Caches:/root/.cache/" ghcr.io/aquasecurity/trivy:0.59.0 image "$source_image"
     docker tag "$source_image" "$target_image"
     docker push "$target_image"
   fi
