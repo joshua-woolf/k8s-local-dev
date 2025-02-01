@@ -6,7 +6,6 @@ metadata:
     app.kubernetes.io/name: apm-server
     app.kubernetes.io/version: 8.17.0
   name: apm-server
-  namespace: monitoring
 spec:
   count: 1
   elasticsearchRef:

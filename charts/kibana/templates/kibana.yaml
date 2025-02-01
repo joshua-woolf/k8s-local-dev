@@ -6,7 +6,6 @@ metadata:
     app.kubernetes.io/name: kibana
     app.kubernetes.io/version: 8.17.0
   name: kibana
-  namespace: monitoring
 spec:
   config:
     server.publicBaseUrl: https://kibana.local.dev
@@ -32,7 +31,7 @@ spec:
           - logs
           - metrics
         name: Fleet Server on ECK policy
-        namespace: monitoring
+        namespace: {{ .Release.Namespace}}
         package_policies:
           - id: fleet_server-1
             name: fleet_server-1
@@ -45,7 +44,7 @@ spec:
           - logs
           - metrics
         name: Elastic Agent on ECK policy
-        namespace: monitoring
+        namespace: {{ .Release.Namespace}}
         package_policies:
           - name: system-1
             package:
@@ -63,28 +62,3 @@ spec:
         disabled: true
   image: registry.local.dev:5001/docker.elastic.co/kibana/kibana:8.17.0
   version: 8.17.0
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: kibana
-  namespace: monitoring
-  annotations:
-    cert-manager.io/cluster-issuer: ca-issuer
-    external-dns.alpha.kubernetes.io/target: local.dev
-spec:
-  rules:
-    - host: kibana.local.dev
-      http:
-        paths:
-          - backend:
-              service:
-                name: kibana-kb-http
-                port:
-                  number: 5601
-            path: /
-            pathType: Prefix
-  tls:
-    - hosts:
-        - kibana.local.dev
-      secretName: kibana-tls

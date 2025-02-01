@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: ca-issuer
+    external-dns.alpha.kubernetes.io/target: local.dev
+  labels:
+    app.kubernetes.io/instance: eck-stack
+    app.kubernetes.io/name: kibana
+    app.kubernetes.io/version: 8.17.0
+  name: kibana
+spec:
+  rules:
+    - host: kibana.local.dev
+      http:
+        paths:
+          - backend:
+              service:
+                name: kibana-kb-http
+                port:
+                  number: 5601
+            path: /
+            pathType: Prefix
+  tls:
+    - hosts:
+        - kibana.local.dev
+      secretName: kibana-tls

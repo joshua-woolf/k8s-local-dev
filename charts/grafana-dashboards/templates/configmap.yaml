@@ -7,7 +7,6 @@ metadata:
     app.kubernetes.io/version: latest
     grafana_dashboard: "1"
   name: custom-grafana-dashboards
-  namespace: monitoring
 data:
   {{- $files := .Files }}
   {{- range $path, $_ :=  .Files.Glob  "dashboards/*.json" }}

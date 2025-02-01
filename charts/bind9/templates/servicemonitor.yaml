@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/instance: bind9
+    app.kubernetes.io/name: bind9
+    app.kubernetes.io/version: 9.18-22.04_beta
+    release: kube-prometheus
+  name: bind9
+spec:
+  endpoints:
+    - port: metrics
+  jobLabel: bind9
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bind9

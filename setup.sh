@@ -131,10 +131,10 @@ for node in $(kind get nodes); do
 done
 
 # Prometheus Stack
-kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
 
 # Install Grafana dashboards
-helm upgrade grafana-dashboards ./grafana-dashboards \
+helm upgrade grafana-dashboards ./charts/grafana-dashboards \
+  --create-namespace \
   --install \
   --namespace monitoring \
   --wait
@@ -181,22 +181,24 @@ helm upgrade cert-manager jetstack/cert-manager \
   --version v1.16.3 \
   --wait
 
-kubectl apply -f ./certs/cluster-issuer.yaml
+helm upgrade cluster-issuer ./charts/cluster-issuer \
+  --create-namespace \
+  --install \
+  --namespace cert-manager \
+  --wait
 
 # DNS
-kubectl apply -f ./dns/dns.yaml
+helm upgrade bind9 ./charts/bind9 \
+  --create-namespace \
+  --install \
+  --namespace dns \
+  --wait
 
-kubectl wait --namespace dns \
-  --for=condition=ready pod \
-  --selector=app.kubernetes.io/name=bind9 \
-  --timeout=300s
-
-kubectl apply -f ./dns/external-dns.yaml
-
-kubectl wait --namespace dns \
-  --for=condition=ready pod \
-  --selector=app.kubernetes.io/name=external-dns \
-  --timeout=300s
+helm upgrade external-dns ./charts/external-dns \
+  --create-namespace \
+  --install \
+  --namespace dns \
+  --wait
 
 # Elastic Stack
 helm upgrade elastic-operator elastic/eck-operator \
@@ -207,7 +209,12 @@ helm upgrade elastic-operator elastic/eck-operator \
   --version 2.16.1 \
   --wait
 
-kubectl apply -f ./elastic/elasticsearch.yaml
+
+helm upgrade elasticsearch ./charts/elasticsearch \
+  --create-namespace \
+  --install \
+  --namespace monitoring \
+  --wait
 
 kubectl wait --for=condition=reconciliationcomplete elasticsearch/elasticsearch -n monitoring --timeout=300s
 
@@ -216,7 +223,11 @@ echo "Elasticsearch is running on https://elasticsearch.local.dev"
 echo "Username: elastic"
 echo "Password: $(kubectl get secret elasticsearch-es-elastic-user -n monitoring -o=jsonpath='{.data.elastic}' | base64 --decode)"
 
-kubectl apply -f ./elastic/kibana.yaml
+helm upgrade kibana ./charts/kibana \
+  --create-namespace \
+  --install \
+  --namespace monitoring \
+  --wait
 
 kubectl wait --for=jsonpath='{.status.health}'=green kibana/kibana -n monitoring --timeout=300s
 
@@ -225,15 +236,27 @@ echo "Kibana is running on https://kibana.local.dev"
 echo "Username: elastic"
 echo "Password: $(kubectl get secret elasticsearch-es-elastic-user -n monitoring -o=jsonpath='{.data.elastic}' | base64 --decode)"
 
-kubectl apply -f ./elastic/apmserver.yaml
+helm upgrade apm-server ./charts/apm-server \
+  --create-namespace \
+  --install \
+  --namespace monitoring \
+  --wait
 
 kubectl wait --for=jsonpath='{.status.health}'=green apmserver/apm-server -n monitoring --timeout=300s
 
-kubectl apply -f ./elastic/fleetserver.yaml
+helm upgrade fleet-server ./charts/fleet-server \
+  --create-namespace \
+  --install \
+  --namespace monitoring \
+  --wait
 
 kubectl wait --for=jsonpath='{.status.health}'=green agent/fleet-server -n monitoring --timeout=300s
 
-kubectl apply -f ./elastic/elasticagent.yaml
+helm upgrade elastic-agent ./charts/elastic-agent \
+  --create-namespace \
+  --install \
+  --namespace monitoring \
+  --wait
 
 kubectl wait --for=jsonpath='{.status.health}'=green agent/elastic-agent -n monitoring --timeout=300s
 
@@ -250,7 +273,11 @@ helm upgrade otel-collector open-telemetry/opentelemetry-collector \
   --wait
 
 # Traefik
-kubectl apply -f ./traefik/certificate.yaml
+helm upgrade certificates ./charts/certificates \
+  --create-namespace \
+  --install \
+  --namespace traefik \
+  --wait
 
 helm upgrade traefik traefik/traefik \
   --create-namespace \

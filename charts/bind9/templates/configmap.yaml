@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: bind9
+    app.kubernetes.io/name: bind9
+    app.kubernetes.io/version: 9.18-22.04_beta
+  name: bind9
+data:
+  named.conf.options: |
+    acl internal {
+      10.0.0.0/8;
+      172.16.0.0/12;
+      192.168.0.0/16;
+      localhost;
+      localnets;
+    };
+
+    options {
+      directory "/var/cache/bind";
+
+      # Forwarders configuration
+      forwarders {
+        8.8.8.8;
+        8.8.4.4;
+      };
+      forward only;
+
+      # Network configuration
+      listen-on port 53 { any; };
+      listen-on-v6 { none; };
+      allow-query { internal; };
+      allow-recursion { internal; };
+      allow-query-cache { internal; };
+
+      # Performance tuning
+      max-cache-size 256m;
+      max-cache-ttl 86400;
+      max-ncache-ttl 3600;
+      recursive-clients 3000;
+      tcp-clients 2000;
+
+      # Security settings
+      version "not disclosed";
+      dnssec-validation auto;
+      auth-nxdomain no;
+      empty-zones-enable yes;
+
+      # Rate limiting to prevent DNS amplification attacks
+      rate-limit {
+        responses-per-second 20;
+        window 5;
+      };
+
+      # Memory and transfer tuning
+      transfer-format many-answers;
+      transfers-in 10;
+      transfers-out 10;
+      transfers-per-ns 2;
+    };
+
+    # Statistics configuration
+    statistics-channels {
+      inet 127.0.0.1 port 8053 allow { 127.0.0.1; };
+    };
+
+    # Logging configuration
+    logging {
+      channel default_log {
+        file "/var/log/named/default.log" versions 3 size 20m;
+        severity info;
+        print-time yes;
+        print-severity yes;
+        print-category yes;
+      };
+
+      channel query_log {
+        file "/var/log/named/query.log" versions 3 size 20m;
+        severity info;
+        print-time yes;
+      };
+
+      category default { default_log; };
+      category queries { query_log; };
+    };
+
+  named.conf.local: |
+    key "externaldns-key" {
+        algorithm hmac-sha256;
+        secret "0Z/s3fhefz8Kq3xHNOYaiEvBHsdxEsRMyEx29b5SBLY=";
+    };
+
+    zone "local.dev" {
+        type master;
+        file "/var/cache/bind/local.dev.zone";
+        allow-transfer { key externaldns-key; };
+        update-policy {
+            grant externaldns-key zonesub ANY;
+        };
+    };
+
+
+  local.dev.zone: |
+    $TTL    86400
+    @       IN      SOA     local.dev. root.local.dev. (
+                            2023111001      ; Serial
+                            3600            ; Refresh
+                            1800            ; Retry
+                            604800          ; Expire
+                            86400           ; Minimum TTL
+    )
+    @       IN      NS      ns.local.dev.
+    @       IN      A       127.0.0.1
+    ns      IN      A       127.0.0.1

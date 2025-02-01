@@ -1,72 +1,3 @@
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/instance: external-dns
-    app.kubernetes.io/name: external-dns
-    app.kubernetes.io/version: v0.15.1
-  name: external-dns
-  namespace: dns
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - services
-      - endpoints
-      - pods
-      - nodes
-    verbs:
-      - get
-      - watch
-      - list
-  - apiGroups:
-      - extensions
-      - networking.k8s.io
-    resources:
-      - ingresses
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - traefik.io
-    resources:
-      - ingressroutes
-      - ingressroutetcps
-      - ingressrouteudps
-    verbs:
-      - get
-      - list
-      - watch
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  labels:
-    app.kubernetes.io/instance: external-dns
-    app.kubernetes.io/name: external-dns
-    app.kubernetes.io/version: v0.15.1
-  name: external-dns
-  namespace: dns
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  labels:
-    app.kubernetes.io/instance: external-dns
-    app.kubernetes.io/name: external-dns
-    app.kubernetes.io/version: v0.15.1
-  name: external-dns-viewer
-  namespace: dns
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: external-dns
-subjects:
-  - kind: ServiceAccount
-    name: external-dns
-    namespace: dns
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -75,7 +6,6 @@ metadata:
     app.kubernetes.io/name: external-dns
     app.kubernetes.io/version: v0.15.1
   name: external-dns
-  namespace: dns
 spec:
   selector:
     matchLabels:
@@ -139,40 +69,3 @@ spec:
         runAsNonRoot: true
         runAsUser: 65534
       serviceAccountName: external-dns
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  labels:
-    app.kubernetes.io/instance: external-dns
-    app.kubernetes.io/name: external-dns
-    app.kubernetes.io/version: v0.15.1
-    release: kube-prometheus
-  name: external-dns
-  namespace: dns
-spec:
-  endpoints:
-    - port: metrics
-  jobLabel: external-dns
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: external-dns
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app.kubernetes.io/instance: external-dns
-    app.kubernetes.io/name: external-dns
-    app.kubernetes.io/version: v0.15.1
-  name: external-dns
-  namespace: dns
-spec:
-  ports:
-  - name: metrics
-    port: 7979
-    protocol: TCP
-    targetPort: metrics
-  selector:
-    app.kubernetes.io/name: external-dns
-  type: ClusterIP

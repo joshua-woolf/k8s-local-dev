@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/instance: external-dns
+    app.kubernetes.io/name: external-dns
+    app.kubernetes.io/version: v0.15.1
+    release: kube-prometheus
+  name: external-dns
+spec:
+  endpoints:
+    - port: metrics
+  jobLabel: external-dns
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: external-dns

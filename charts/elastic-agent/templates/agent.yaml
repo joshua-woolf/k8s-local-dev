@@ -1,0 +1,26 @@
+apiVersion: agent.k8s.elastic.co/v1alpha1
+kind: Agent
+metadata:
+  labels:
+    app.kubernetes.io/instance: eck-stack
+    app.kubernetes.io/name: elastic-agent
+    app.kubernetes.io/version: 8.17.0
+  name: elastic-agent
+spec:
+  daemonSet:
+    podTemplate:
+      spec:
+        automountServiceAccountToken: true
+        dnsPolicy: ClusterFirstWithHostNet
+        hostNetwork: true
+        securityContext:
+          runAsUser: 0
+        serviceAccountName: elastic-agent
+  fleetServerRef:
+    name: fleet-server
+  image: registry.local.dev:5001/docker.elastic.co/beats/elastic-agent:8.17.0
+  kibanaRef:
+    name: kibana
+  mode: fleet
+  policyID: eck-agent
+  version: 8.17.0
