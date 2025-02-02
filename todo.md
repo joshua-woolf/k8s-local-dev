@@ -1,4 +1,3 @@
-Look at Traefik OTEL Collector integration.
 Look at getting elastic and otel TLS working.
 
 Change entire setup to use flux for deployment.

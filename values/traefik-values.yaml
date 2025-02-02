@@ -22,11 +22,17 @@ ingressRoute:
       domains:
         - main: traefik.local.dev
 metrics:
+  addInternals: true
   prometheus:
     serviceMonitor:
       additionalLabels:
         release: kube-prometheus
       enabled: true
+  otlp:
+    enabled: true
+    http:
+      enabled: true
+      endpoint: http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4318/v1/metrics
 nodeSelector:
   kubernetes.io/os: linux
 ports:
@@ -53,3 +59,10 @@ providers:
     allowExternalNameServices: true
 service:
   type: NodePort
+tracing:
+  addInternals: true
+  otlp:
+    enabled: true
+    http:
+      enabled: true
+      endpoint: http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4318/v1/traces
