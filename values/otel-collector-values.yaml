@@ -42,6 +42,22 @@ config:
 image:
   repository: registry.local.dev:5001/ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
   tag: 0.118.0
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: ca-issuer
+    external-dns.alpha.kubernetes.io/target: local.dev
+  enabled: true
+  hosts:
+    - host: otel-collector.local.dev
+      paths:
+        - path: /
+          pathType: Prefix
+          port: 4318
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - otel-collector.local.dev
+      secretName: otel-collector-tls
 mode: deployment
 nodeSelector:
   kubernetes.io/os: linux

@@ -5,7 +5,6 @@ Change entire setup to use flux for deployment.
 Convert script to powershell.
 
 Create dashboard app.
-Get apps to produce telemetry.
 
 Switch to using cloud-provider-kind to setup a load balancer rather than using node ports.
 Look at adding network policies.
