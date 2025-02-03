@@ -4,6 +4,7 @@ alertmanager:
     annotations:
       cert-manager.io/cluster-issuer: ca-issuer
       external-dns.alpha.kubernetes.io/target: local.dev
+      friendly-name: Alert Manager
     enabled: true
     hosts:
       - alertmanager.local.dev
@@ -40,6 +41,7 @@ grafana:
     annotations:
       cert-manager.io/cluster-issuer: ca-issuer
       external-dns.alpha.kubernetes.io/target: local.dev
+      friendly-name: Grafana
     enabled: true
     hosts:
       - grafana.local.dev
@@ -97,6 +99,7 @@ prometheus:
     annotations:
       cert-manager.io/cluster-issuer: ca-issuer
       external-dns.alpha.kubernetes.io/target: local.dev
+      friendly-name: Prometheus
     enabled: true
     hosts:
       - prometheus.local.dev

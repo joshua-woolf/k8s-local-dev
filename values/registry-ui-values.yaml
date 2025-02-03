@@ -7,6 +7,7 @@ ui:
     annotations:
       cert-manager.io/cluster-issuer: ca-issuer
       external-dns.alpha.kubernetes.io/target: local.dev
+      friendly-name: Container Registry
     enabled: true
     host: registry.local.dev
     ingressClassName: traefik

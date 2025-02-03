@@ -4,6 +4,7 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: ca-issuer
     external-dns.alpha.kubernetes.io/target: local.dev
+    friendly-name: Kibana
   labels:
     app.kubernetes.io/instance: eck-stack
     app.kubernetes.io/name: kibana

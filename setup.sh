@@ -62,8 +62,6 @@ else
     -p 5001:443 --name registry --network kind registry:2.8.3@sha256:319881be2ee9e345d5837d15842a04268de6a139e23be42654fc7664fc6eaf52
 fi
 
-echo "Registry is running on https://registry.local.dev:5001"
-
 # Image Caching
 LOCAL_REGISTRY="localhost:5001"
 
@@ -149,12 +147,8 @@ helm upgrade kube-prometheus prometheus-community/kube-prometheus-stack \
   --version 68.3.0 \
   --wait
 
-echo "Grafana is running on https://grafana.local.dev"
-
 echo "Username: $(kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-user}" | base64 --decode)"
 echo "Password: $(kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode)"
-
-echo "Prometheus is running on https://prometheus.local.dev"
 
 # Metrics Server
 helm upgrade metrics-server metrics-server/metrics-server \
@@ -227,8 +221,6 @@ helm upgrade elasticsearch ./charts/elasticsearch \
 
 kubectl wait --for=condition=reconciliationcomplete elasticsearch/elasticsearch -n monitoring --timeout=300s
 
-echo "Elasticsearch is running on https://elasticsearch.local.dev"
-
 echo "Username: elastic"
 echo "Password: $(kubectl get secret elasticsearch-es-elastic-user -n monitoring -o=jsonpath='{.data.elastic}' | base64 --decode)"
 
@@ -240,8 +232,6 @@ helm upgrade kibana ./charts/kibana \
   --wait
 
 kubectl wait --for=jsonpath='{.status.health}'=green kibana/kibana -n monitoring --timeout=300s
-
-echo "Kibana is running on https://kibana.local.dev"
 
 echo "Username: elastic"
 echo "Password: $(kubectl get secret elasticsearch-es-elastic-user -n monitoring -o=jsonpath='{.data.elastic}' | base64 --decode)"
@@ -303,8 +293,6 @@ helm upgrade traefik traefik/traefik \
   --version 34.1.0 \
   --wait
 
-echo "Traefik Dashboard is running on https://traefik.local.dev"
-
 # Container Registry UI
 helm upgrade registry-ui joxit/docker-registry-ui \
   --create-namespace \
@@ -314,8 +302,6 @@ helm upgrade registry-ui joxit/docker-registry-ui \
   --values "./values/registry-ui-values.yaml" \
   --version 1.1.3 \
   --wait
-
-echo "Registry UI is running on https://registry.local.dev"
 
 ## Flagger
 helm upgrade flagger flagger/flagger \
@@ -346,20 +332,18 @@ helm upgrade podinfo podinfo/podinfo \
   --version 6.1.4 \
   --wait
 
-echo "PodInfo is running on https://podinfo.local.dev"
-
 # Flush DNS Cache
 sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
 
-# Weather API
-docker build -t registry.local.dev:5001/weather-api:latest ./weather-api
-docker push registry.local.dev:5001/weather-api:latest
+# K8s Dashboard
+docker build -t registry.local.dev:5001/k8s-dashboard:latest ./k8s-dashboard
+docker push registry.local.dev:5001/k8s-dashboard:latest
 
-helm upgrade weather-api ./weather-api/helm \
+helm upgrade k8s-dashboard ./k8s-dashboard/helm \
   --create-namespace \
   --install \
-  --namespace weather-api \
+  --namespace k8s-dashboard \
   --hide-notes \
   --wait
 
-echo "Weather API is running on https://weather.local.dev"
+echo "K8s Dashboard is running on https://k8s-dashboard.local.dev"

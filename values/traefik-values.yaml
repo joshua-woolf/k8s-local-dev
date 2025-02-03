@@ -12,6 +12,7 @@ ingressRoute:
   dashboard:
     annotations:
       external-dns.alpha.kubernetes.io/target: local.dev
+      friendly-name: Traefik
     enabled: true
     entryPoints:
       - web

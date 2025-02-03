@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kubernetes Routes Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="container mx-auto px-4 py-8">
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-800">Kubernetes Routes Dashboard</h1>
+      <p class="text-gray-600 mt-2">View all Ingress and IngressRoute resources in your cluster</p>
+    </header>
+
+    <div class="grid grid-cols-1 gap-6" id="routes-container">
+      <!-- Routes will be dynamically inserted here -->
+    </div>
+
+    <div id="loading" class="text-center py-8">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+    </div>
+  </div>
+
+  <script>
+    const routesContainer = document.getElementById('routes-container');
+    const loading = document.getElementById('loading');
+
+    function createRouteCard(route) {
+      return `
+        <div class="bg-white rounded-lg shadow-md p-6 fade-in">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <span class="text-sm font-semibold text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                ${route.name}
+              </span>
+            </div>
+          </div>
+          <div class="space-y-2">
+            ${route.urls.map(url => `
+              <a href="${url}" target="_blank" class="block hover:bg-gray-50 p-2 rounded transition-colors">
+                <div class="flex items-center text-gray-700 hover:text-blue-600">
+                  <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                  </svg>
+                  ${url}
+                </div>
+              </a>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    async function fetchRoutes() {
+      try {
+        const response = await fetch('/api/routes');
+        const routes = await response.json();
+
+        loading.style.display = 'none';
+        routesContainer.innerHTML = routes
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map(createRouteCard)
+          .join('');
+      } catch (error) {
+        loading.innerHTML = '<p class="text-red-500">Error loading routes. Please try again later.</p>';
+        console.error('Error:', error);
+      }
+    }
+
+    // Initial load
+    fetchRoutes();
+
+    // Refresh every 30 seconds
+    setInterval(fetchRoutes, 30000);
+  </script>
+</body>
+</html>
