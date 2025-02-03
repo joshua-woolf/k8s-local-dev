@@ -16,3 +16,4 @@ Future enhancements:
   - Resource Requests and Limits
   - Secure Connections
   - Service Mesh
+  - Storage
