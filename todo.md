@@ -1,6 +1,9 @@
 Add credentials to k8s-dashboard.
 Add dark mode to k8s-dashboard.
 Add tests for the k8s-dashboard.
+Refactor dashboard.
+Look at Kubernetes Dashboard:
+https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/
 Refactor scripts.
 
 Look at External DNS crashes.
