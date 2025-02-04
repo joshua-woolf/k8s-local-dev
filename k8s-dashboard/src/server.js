@@ -1,7 +1,12 @@
+const { setupTelemetry } = require('./tracing');
+// Initialize OpenTelemetry - this should be the first import
+setupTelemetry();
+
 const express = require('express');
 const cors = require('cors');
 const k8s = require('@kubernetes/client-node');
 const path = require('path');
+const { trace, context, SpanStatusCode } = require('@opentelemetry/api');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -19,8 +24,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Helper function to get credentials from secret
 async function getCredentialsFromSecret(namespace, secretName, usernameAnnotation, passwordAnnotation, passwordJsonPath) {
+  const tracer = trace.getTracer('k8s-dashboard');
+  const span = tracer.startSpan('getCredentialsFromSecret');
+
   try {
     if (!secretName) return null;
+
+    span.setAttribute('namespace', namespace);
+    span.setAttribute('secretName', secretName);
 
     const secret = await coreV1Api.readNamespacedSecret(secretName, namespace);
     const username = usernameAnnotation;
@@ -33,17 +44,28 @@ async function getCredentialsFromSecret(namespace, secretName, usernameAnnotatio
       password = Buffer.from(data[jsonPath.split('.')[2]], 'base64').toString();
     }
 
+    span.setStatus({ code: SpanStatusCode.OK });
     return username && password ? { username, password } : null;
   } catch (error) {
     console.error(`Error fetching credentials from secret: ${error.message}`);
+    span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: error.message
+    });
     return null;
+  } finally {
+    span.end();
   }
 }
 
 // API endpoint to get all ingresses and ingressroutes
 app.get('/api/routes', async (req, res) => {
+  const tracer = trace.getTracer('k8s-dashboard');
+  const span = tracer.startSpan('get_routes');
+
   try {
     // Get standard ingresses
+    const ingressSpan = tracer.startSpan('get_ingresses');
     const ingressResponse = await k8sApi.listIngressForAllNamespaces();
     const ingresses = await Promise.all(ingressResponse.body.items.map(async ingress => {
       const credentials = await getCredentialsFromSecret(
@@ -60,8 +82,11 @@ app.get('/api/routes', async (req, res) => {
         credentials
       };
     }));
+    ingressSpan.setStatus({ code: SpanStatusCode.OK });
+    ingressSpan.end();
 
     // Get Traefik IngressRoutes
+    const ingressRouteSpan = tracer.startSpan('get_ingressroutes');
     const ingressRouteResponse = await customObjectsApi.listClusterCustomObject(
       'traefik.io',
       'v1alpha1',
@@ -74,11 +99,23 @@ app.get('/api/routes', async (req, res) => {
         return host ? `https://${host}` : 'No host specified';
       })
     }));
+    ingressRouteSpan.setStatus({ code: SpanStatusCode.OK });
+    ingressRouteSpan.end();
+
+    span.setAttribute('ingress_count', ingresses.length);
+    span.setAttribute('ingressroute_count', ingressRoutes.length);
+    span.setStatus({ code: SpanStatusCode.OK });
 
     res.json([...ingresses, ...ingressRoutes]);
   } catch (error) {
     console.error('Error fetching routes:', error);
+    span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: error.message
+    });
     res.status(500).json({ error: 'Failed to fetch routes' });
+  } finally {
+    span.end();
   }
 });
 

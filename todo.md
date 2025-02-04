@@ -1,5 +1,4 @@
 Improve k8s-dashboard:
-  - Add telemetry.
   - Add canary.
   - Add tests.
   - Refactor.

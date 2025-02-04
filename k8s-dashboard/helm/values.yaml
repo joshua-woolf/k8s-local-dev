@@ -46,3 +46,24 @@ nodeSelector:
   kubernetes.io/os: linux
 tolerations: []
 affinity: {}
+
+env:
+  - name: NODE_ENV
+    value: production
+  - name: OTEL_SERVICE_NAME
+    value: k8s-dashboard
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4318
+  - name: OTEL_TRACES_SAMPLER
+    value: parentbased_traceidratio
+  - name: OTEL_TRACES_SAMPLER_ARG
+    value: "1"
+  - name: OTEL_PROPAGATORS
+    value: tracecontext,baggage
+  - name: OTEL_METRICS_EXPORTER
+    value: otlp
+  - name: OTEL_LOGS_EXPORTER
+    value: otlp
+
+podAnnotations:
+  instrumentation.opentelemetry.io/inject-sdk: "true"
