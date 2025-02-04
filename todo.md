@@ -4,9 +4,6 @@ Improve k8s-dashboard:
   - Add tests.
   - Refactor.
 
-Look at Kubernetes Dashboard:
-https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/
-
 Refactor scripts.
 Add keda.
 
