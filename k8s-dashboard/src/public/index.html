@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,13 +13,65 @@
       0% { opacity: 0; }
       100% { opacity: 1; }
     }
+    /* Dark mode styles */
+    html.dark body {
+      background-color: #111827;
+    }
+    html.dark h1 {
+      color: #ffffff;
+    }
+    html.dark p {
+      color: #d1d5db;
+    }
+    html.dark .bg-white {
+      background-color: #1f2937;
+    }
+    html.dark .text-gray-700 {
+      color: #d1d5db;
+    }
+    html.dark .hover\:bg-gray-50:hover {
+      background-color: #374151;
+    }
+    html.dark #theme-toggle {
+      background-color: #374151;
+      color: #d1d5db;
+    }
+    html.dark .text-gray-800 {
+      color: #f3f4f6;
+    }
+    html.dark .text-gray-600 {
+      color: #9ca3af;
+    }
+    html.dark .text-blue-600 {
+      color: #60a5fa;
+    }
+    html.dark .bg-blue-100 {
+      background-color: #1e3a8a;
+    }
+    html.dark .hover\:text-blue-600:hover {
+      color: #93c5fd;
+    }
+    /* Add transition for smooth theme switching */
+    * {
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
   <div class="container mx-auto px-4 py-8">
-    <header class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-800">Kubernetes Routes Dashboard</h1>
-      <p class="text-gray-600 mt-2">View all Ingress and IngressRoute resources in your cluster</p>
+    <header class="mb-8 flex justify-between items-center">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-800">Local Dev Environment</h1>
+        <p class="text-gray-600 mt-2">View all Ingress and IngressRoute resources in your cluster</p>
+      </div>
+      <button id="theme-toggle" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700">
+        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+        </svg>
+        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"></path>
+        </svg>
+      </button>
     </header>
 
     <div class="grid grid-cols-1 gap-6" id="routes-container">
@@ -32,6 +84,39 @@
   </div>
 
   <script>
+    // Theme handling
+    function getThemePreference() {
+      if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        return 'dark';
+      }
+      return 'light';
+    }
+
+    function setTheme(theme) {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      localStorage.setItem('theme', theme);
+      updateThemeToggleIcons();
+    }
+
+    function updateThemeToggleIcons() {
+      const isDark = document.documentElement.classList.contains('dark');
+      document.getElementById('theme-toggle-dark-icon').classList.toggle('hidden', isDark);
+      document.getElementById('theme-toggle-light-icon').classList.toggle('hidden', !isDark);
+    }
+
+    // Set initial theme
+    setTheme(getThemePreference());
+
+    // Theme toggle button handler
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      const isDark = document.documentElement.classList.contains('dark');
+      setTheme(isDark ? 'light' : 'dark');
+    });
+
     const routesContainer = document.getElementById('routes-container');
     const loading = document.getElementById('loading');
 
