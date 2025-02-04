@@ -194,13 +194,6 @@ helm upgrade bind9 ./charts/bind9 \
   --hide-notes \
   --wait
 
-helm upgrade external-dns ./charts/external-dns \
-  --create-namespace \
-  --install \
-  --namespace dns \
-  --hide-notes \
-  --wait
-
 # Elastic Stack
 helm upgrade elastic-operator elastic/eck-operator \
   --create-namespace \
@@ -210,7 +203,6 @@ helm upgrade elastic-operator elastic/eck-operator \
   --values "./values/elastic-operator-values.yaml" \
   --version 2.16.1 \
   --wait
-
 
 helm upgrade elasticsearch ./charts/elasticsearch \
   --create-namespace \
@@ -291,6 +283,14 @@ helm upgrade traefik traefik/traefik \
   --hide-notes \
   --values "./values/traefik-values.yaml" \
   --version 34.1.0 \
+  --wait
+
+# External DNS
+helm upgrade external-dns ./charts/external-dns \
+  --create-namespace \
+  --install \
+  --namespace dns \
+  --hide-notes \
   --wait
 
 # Container Registry UI
