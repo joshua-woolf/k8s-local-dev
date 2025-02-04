@@ -40,6 +40,9 @@ grafana:
   ingress:
     annotations:
       cert-manager.io/cluster-issuer: ca-issuer
+      credentials-password-jsonpath: "{.data.admin-password}"
+      credentials-password-secret: kube-prometheus-grafana
+      credentials-username: admin
       external-dns.alpha.kubernetes.io/target: local.dev
       friendly-name: Grafana
     enabled: true

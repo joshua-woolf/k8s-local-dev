@@ -12,18 +12,53 @@ kc.loadFromCluster(); // This will load the service account credentials when run
 
 const k8sApi = kc.makeApiClient(k8s.NetworkingV1Api);
 const customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
+const coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
 
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Helper function to get credentials from secret
+async function getCredentialsFromSecret(namespace, secretName, usernameAnnotation, passwordAnnotation, passwordJsonPath) {
+  try {
+    if (!secretName) return null;
+
+    const secret = await coreV1Api.readNamespacedSecret(secretName, namespace);
+    const username = usernameAnnotation;
+    let password;
+
+    if (passwordJsonPath) {
+      // Evaluate the JSONPath expression
+      const jsonPath = passwordJsonPath.replace(/[{}]/g, '');
+      const data = secret.body.data;
+      password = Buffer.from(data[jsonPath.split('.')[2]], 'base64').toString();
+    }
+
+    return username && password ? { username, password } : null;
+  } catch (error) {
+    console.error(`Error fetching credentials from secret: ${error.message}`);
+    return null;
+  }
+}
 
 // API endpoint to get all ingresses and ingressroutes
 app.get('/api/routes', async (req, res) => {
   try {
     // Get standard ingresses
     const ingressResponse = await k8sApi.listIngressForAllNamespaces();
-    const ingresses = ingressResponse.body.items.map(ingress => ({
-      name: ingress.metadata.annotations?.['friendly-name'] || ingress.metadata.name,
-      urls: ingress.spec.rules.map(rule => `https://${rule.host}`)
+    const ingresses = await Promise.all(ingressResponse.body.items.map(async ingress => {
+      const credentials = await getCredentialsFromSecret(
+        ingress.metadata.namespace,
+        ingress.metadata.annotations?.['credentials-password-secret'],
+        ingress.metadata.annotations?.['credentials-username'],
+        ingress.metadata.annotations?.['credentials-password'],
+        ingress.metadata.annotations?.['credentials-password-jsonpath']
+      );
+
+      return {
+        name: ingress.metadata.annotations?.['friendly-name'] || ingress.metadata.name,
+        urls: ingress.spec.rules.map(rule => `https://${rule.host}`),
+        credentials
+      };
     }));
 
     // Get Traefik IngressRoutes

@@ -3,6 +3,9 @@ kind: Ingress
 metadata:
   annotations:
     cert-manager.io/cluster-issuer: ca-issuer
+    credentials-password-jsonpath: "{.data.elastic}"
+    credentials-password-secret: elasticsearch-es-elastic-user
+    credentials-username: elastic
     external-dns.alpha.kubernetes.io/target: local.dev
     friendly-name: Kibana
   labels:

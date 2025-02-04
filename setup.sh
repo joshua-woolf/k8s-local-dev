@@ -147,9 +147,6 @@ helm upgrade kube-prometheus prometheus-community/kube-prometheus-stack \
   --version 68.3.0 \
   --wait
 
-echo "Username: $(kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-user}" | base64 --decode)"
-echo "Password: $(kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode)"
-
 # Metrics Server
 helm upgrade metrics-server metrics-server/metrics-server \
   --create-namespace \
@@ -213,9 +210,6 @@ helm upgrade elasticsearch ./charts/elasticsearch \
 
 kubectl wait --for=condition=reconciliationcomplete elasticsearch/elasticsearch -n monitoring --timeout=300s
 
-echo "Username: elastic"
-echo "Password: $(kubectl get secret elasticsearch-es-elastic-user -n monitoring -o=jsonpath='{.data.elastic}' | base64 --decode)"
-
 helm upgrade kibana ./charts/kibana \
   --create-namespace \
   --install \
@@ -224,9 +218,6 @@ helm upgrade kibana ./charts/kibana \
   --wait
 
 kubectl wait --for=jsonpath='{.status.health}'=green kibana/kibana -n monitoring --timeout=300s
-
-echo "Username: elastic"
-echo "Password: $(kubectl get secret elasticsearch-es-elastic-user -n monitoring -o=jsonpath='{.data.elastic}' | base64 --decode)"
 
 helm upgrade apm-server ./charts/apm-server \
   --create-namespace \
