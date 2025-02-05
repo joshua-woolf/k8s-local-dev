@@ -30,6 +30,7 @@ crds:
         repository: docker.io/busybox
         tag: 1.37.0
 grafana:
+  adminUser: grafana
   grafana.ini:
     analytics:
       check_for_updates: false
@@ -42,7 +43,7 @@ grafana:
       cert-manager.io/cluster-issuer: ca-issuer
       credentials-password-jsonpath: "{.data.admin-password}"
       credentials-password-secret: kube-prometheus-grafana
-      credentials-username: admin
+      credentials-username: grafana
       external-dns.alpha.kubernetes.io/target: local.dev
       friendly-name: Grafana
     enabled: true

@@ -53,7 +53,7 @@ else
     -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods='["DELETE", "GET", "HEAD", "OPTIONS"]' \
     -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin='["https://registry.local.dev"]' \
     -e REGISTRY_HTTP_HEADERS_Access-Control-Expose-Headers='["Docker-Content-Digest"]' \
-    -e REGISTRY_HTTP_SECRET=345704b227b4dac03f0c06ddaecc7ab7349f7f0e33b8cc4cb4e73c4936c50d81 \
+    -e "REGISTRY_HTTP_SECRET=$(openssl rand -hex 32)" \
     -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt \
     -e REGISTRY_HTTP_TLS_KEY=/certs/registry.key \
     -e REGISTRY_LOG_FORMATTER=json \
@@ -128,31 +128,31 @@ for node in $(kind get nodes); do
   "
 done
 
-# Prometheus Stack
-
 # Install Grafana dashboards
 helm upgrade grafana-dashboards ./charts/grafana-dashboards \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace monitoring \
-  --hide-notes \
   --wait
 
+# Prometheus Stack
 helm upgrade kube-prometheus prometheus-community/kube-prometheus-stack \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace monitoring \
-  --hide-notes \
   --values "./values/prometheus-values.yaml" \
+  --set "grafana.adminPassword=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 24)" \
   --version 68.3.0 \
   --wait
 
 # Metrics Server
 helm upgrade metrics-server metrics-server/metrics-server \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace monitoring \
-  --hide-notes \
   --values "./values/metrics-server-values.yaml" \
   --version 3.12.2 \
   --wait
@@ -160,6 +160,7 @@ helm upgrade metrics-server metrics-server/metrics-server \
 # Gatekeeper
 helm upgrade gatekeeper gatekeeper/gatekeeper \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace gatekeeper-system \
   --values "./values/gatekeeper-values.yaml" \
@@ -169,79 +170,79 @@ helm upgrade gatekeeper gatekeeper/gatekeeper \
 # Cert Manager
 helm upgrade cert-manager jetstack/cert-manager \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace cert-manager \
-  --hide-notes \
   --values "./values/cert-manager-values.yaml" \
   --version v1.16.3 \
   --wait
 
 helm upgrade cluster-issuer ./charts/cluster-issuer \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace cert-manager \
-  --hide-notes \
   --wait
 
 # DNS
 helm upgrade bind9 ./charts/bind9 \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace dns \
-  --hide-notes \
   --wait
 
 # Elastic Stack
 helm upgrade elastic-operator elastic/eck-operator \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace elastic-system \
-  --hide-notes \
   --values "./values/elastic-operator-values.yaml" \
   --version 2.16.1 \
   --wait
 
 helm upgrade elasticsearch ./charts/elasticsearch \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace monitoring \
-  --hide-notes \
   --wait
 
 kubectl wait --for=condition=reconciliationcomplete elasticsearch/elasticsearch -n monitoring --timeout=300s
 
 helm upgrade kibana ./charts/kibana \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace monitoring \
-  --hide-notes \
   --wait
 
 kubectl wait --for=jsonpath='{.status.health}'=green kibana/kibana -n monitoring --timeout=300s
 
 helm upgrade apm-server ./charts/apm-server \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace monitoring \
-  --hide-notes \
   --wait
 
 kubectl wait --for=jsonpath='{.status.health}'=green apmserver/apm-server -n monitoring --timeout=300s
 
 helm upgrade fleet-server ./charts/fleet-server \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace monitoring \
-  --hide-notes \
   --wait
 
 kubectl wait --for=jsonpath='{.status.health}'=green agent/fleet-server -n monitoring --timeout=300s
 
 helm upgrade elastic-agent ./charts/elastic-agent \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace monitoring \
-  --hide-notes \
   --wait
 
 kubectl wait --for=jsonpath='{.status.health}'=green agent/elastic-agent -n monitoring --timeout=300s
@@ -251,9 +252,9 @@ ELASTIC_APM_SECRET_TOKEN=$(kubectl get secret apm-server-apm-token -n monitoring
 
 helm upgrade otel-collector open-telemetry/opentelemetry-collector \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace monitoring \
-  --hide-notes \
   --values "./values/otel-collector-values.yaml" \
   --set config.exporters.otlp.headers.Authorization="Bearer ${ELASTIC_APM_SECRET_TOKEN}" \
   --version 0.111.2 \
@@ -262,16 +263,16 @@ helm upgrade otel-collector open-telemetry/opentelemetry-collector \
 # Traefik
 helm upgrade certificates ./charts/certificates \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace traefik \
-  --hide-notes \
   --wait
 
 helm upgrade traefik traefik/traefik \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace traefik \
-  --hide-notes \
   --values "./values/traefik-values.yaml" \
   --version 34.1.0 \
   --wait
@@ -279,17 +280,17 @@ helm upgrade traefik traefik/traefik \
 # External DNS
 helm upgrade external-dns ./charts/external-dns \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace dns \
-  --hide-notes \
   --wait
 
 # Container Registry UI
 helm upgrade registry-ui joxit/docker-registry-ui \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace registry \
-  --hide-notes \
   --values "./values/registry-ui-values.yaml" \
   --version 1.1.3 \
   --wait
@@ -297,18 +298,18 @@ helm upgrade registry-ui joxit/docker-registry-ui \
 ## Flagger
 helm upgrade flagger flagger/flagger \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace flagger \
-  --hide-notes \
   --values "./values/flagger-values.yaml" \
   --version 1.40.0 \
   --wait
 
 helm upgrade flagger-loadtester flagger/loadtester \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace flagger \
-  --hide-notes \
   --values "./values/flagger-loadtester-values.yaml" \
   --version 0.34.0 \
   --wait
@@ -316,9 +317,9 @@ helm upgrade flagger-loadtester flagger/loadtester \
 # PodInfo
 helm upgrade podinfo podinfo/podinfo \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace podinfo \
-  --hide-notes \
   --values "./values/podinfo-values.yaml" \
   --version 6.1.4 \
   --wait
@@ -333,9 +334,9 @@ docker push registry.local.dev:5001/dashboard:latest
 
 helm upgrade dashboard ./charts/dashboard \
   --create-namespace \
+  --hide-notes \
   --install \
   --namespace dashboard \
-  --hide-notes \
   --wait
 
 kubectl rollout restart deployment/dashboard -n dashboard
