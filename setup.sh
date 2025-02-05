@@ -15,10 +15,24 @@ helm repo add traefik https://traefik.github.io/charts
 helm repo update elastic flagger gatekeeper jetstack joxit metrics-server open-telemetry podinfo prometheus-community traefik
 
 # Trusted Root CA Certificate
+if [ ! -f "./certs/ca.key" ] || [ ! -f "./certs/ca.crt" ]; then
+  openssl genrsa -out "./certs/ca.key" 4096
+  openssl req -x509 -new -nodes -key "./certs/ca.key" -sha256 -days 3650 -out "./certs/ca.crt" \
+    -subj "/CN=Local Dev Root CA/O=Local Development/C=US"
+  sudo chmod +r "./certs/ca.key"
+fi
+
 if ! security find-certificate -c "Local Dev Root" /Library/Keychains/System.keychain >/dev/null 2>&1; then
   echo "Installing Root CA to System Keychain..."
   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "./certs/ca.crt"
 fi
+
+# TSIG Key
+if [ ! -f "./certs/tsig.key" ]; then
+  openssl rand -base64 32 > "./certs/tsig.key"
+fi
+
+TSIG_KEY=$(cat "./certs/tsig.key")
 
 # Create Registry Certificate Private Key
 openssl genrsa -out "certs/registry.key" 2048
@@ -28,6 +42,8 @@ openssl req -new \
   -key "certs/registry.key" \
   -config "certs/registry.conf" \
   -out "certs/registry.csr"
+
+sudo chmod +r "./certs/registry.key"
 
 # Sign the Registry Certificate with the Certificate Authority
 openssl x509 -req \
@@ -182,6 +198,8 @@ helm upgrade cluster-issuer ./charts/cluster-issuer \
   --hide-notes \
   --install \
   --namespace cert-manager \
+  --set "ca.crt=$(base64 -i "./certs/ca.crt")" \
+  --set "ca.key=$(base64 -i "./certs/ca.key")" \
   --wait
 
 # DNS
@@ -190,6 +208,7 @@ helm upgrade bind9 ./charts/bind9 \
   --hide-notes \
   --install \
   --namespace dns \
+  --set "tsigKey=$TSIG_KEY" \
   --wait
 
 # Elastic Stack
@@ -283,6 +302,7 @@ helm upgrade external-dns ./charts/external-dns \
   --hide-notes \
   --install \
   --namespace dns \
+  --set "tsigKey=$TSIG_KEY" \
   --wait
 
 # Container Registry UI

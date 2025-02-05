@@ -87,7 +87,7 @@ data:
   named.conf.local: |
     key "externaldns-key" {
         algorithm hmac-sha256;
-        secret "0Z/s3fhefz8Kq3xHNOYaiEvBHsdxEsRMyEx29b5SBLY=";
+        secret "{{ .Values.tsigKey }}";
     };
 
     zone "local.dev" {

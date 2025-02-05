@@ -22,7 +22,7 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
 async function getCredentialsFromSecret(namespace, secretName, usernameAnnotation, passwordAnnotation, passwordJsonPath) {
-  const tracer = trace.getTracer('k8s-dashboard');
+  const tracer = trace.getTracer('dashboard');
   const span = tracer.startSpan('getCredentialsFromSecret');
 
   try {
@@ -60,7 +60,7 @@ async function getCredentialsFromSecret(namespace, secretName, usernameAnnotatio
 }
 
 app.get('/api/routes', async (req, res) => {
-  const tracer = trace.getTracer('k8s-dashboard');
+  const tracer = trace.getTracer('dashboard');
   const span = tracer.startSpan('get_routes');
 
   try {

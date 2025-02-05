@@ -26,7 +26,7 @@ spec:
             - --rfc2136-host=bind9
             - --rfc2136-port=53
             - --rfc2136-zone=local.dev
-            - --rfc2136-tsig-secret=0Z/s3fhefz8Kq3xHNOYaiEvBHsdxEsRMyEx29b5SBLY=
+            - --rfc2136-tsig-secret={{ .Values.tsigKey }}
             - --rfc2136-tsig-secret-alg=hmac-sha256
             - --rfc2136-tsig-keyname=externaldns-key
             - --rfc2136-tsig-axfr
