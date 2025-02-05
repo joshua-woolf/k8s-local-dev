@@ -326,15 +326,17 @@ helm upgrade podinfo podinfo/podinfo \
 # Flush DNS Cache
 sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
 
-# K8s Dashboard
-docker build -t registry.local.dev:5001/k8s-dashboard:latest ./k8s-dashboard
-docker push registry.local.dev:5001/k8s-dashboard:latest
+# Dashboard
+docker build -t registry.local.dev:5001/dashboard:latest ./src/dashboard
+docker push registry.local.dev:5001/dashboard:latest
 
-helm upgrade k8s-dashboard ./k8s-dashboard/helm \
+helm upgrade dashboard ./charts/dashboard \
   --create-namespace \
   --install \
-  --namespace k8s-dashboard \
+  --namespace dashboard \
   --hide-notes \
   --wait
 
-echo "K8s Dashboard is running on https://k8s-dashboard.local.dev"
+kubectl rollout restart deployment/dashboard -n dashboard
+
+echo "Dashboard is running on https://dashboard.local.dev"

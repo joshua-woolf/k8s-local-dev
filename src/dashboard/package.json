@@ -1,10 +1,10 @@
 {
-  "name": "k8s-dashboard",
+  "name": "dashboard",
   "version": "1.0.0",
-  "description": "Kubernetes Routes Dashboard",
-  "main": "src/server.js",
+  "description": "A dashboard application for discovering ingresses into a Kubernetes cluster.",
+  "main": "server/server.js",
   "scripts": {
-    "start": "node src/server.js"
+    "start": "node server/server.js"
   },
   "dependencies": {
     "@kubernetes/client-node": "^0.20.0",

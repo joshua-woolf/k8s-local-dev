@@ -1,5 +1,5 @@
 const { setupTelemetry } = require('./tracing');
-// Initialize OpenTelemetry - this should be the first import
+
 setupTelemetry();
 
 const express = require('express');
@@ -11,9 +11,8 @@ const { trace, context, SpanStatusCode } = require('@opentelemetry/api');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Initialize Kubernetes client
 const kc = new k8s.KubeConfig();
-kc.loadFromCluster(); // This will load the service account credentials when running in cluster
+kc.loadFromCluster();
 
 const k8sApi = kc.makeApiClient(k8s.NetworkingV1Api);
 const customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
@@ -22,7 +21,6 @@ const coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Helper function to get credentials from secret
 async function getCredentialsFromSecret(namespace, secretName, usernameAnnotation, passwordAnnotation, passwordJsonPath) {
   const tracer = trace.getTracer('k8s-dashboard');
   const span = tracer.startSpan('getCredentialsFromSecret');
@@ -38,7 +36,6 @@ async function getCredentialsFromSecret(namespace, secretName, usernameAnnotatio
     let password;
 
     if (passwordJsonPath) {
-      // Evaluate the JSONPath expression
       const jsonPath = passwordJsonPath.replace(/[{}]/g, '');
       const data = secret.body.data;
       password = Buffer.from(data[jsonPath.split('.')[2]], 'base64').toString();
@@ -58,13 +55,11 @@ async function getCredentialsFromSecret(namespace, secretName, usernameAnnotatio
   }
 }
 
-// API endpoint to get all ingresses and ingressroutes
 app.get('/api/routes', async (req, res) => {
   const tracer = trace.getTracer('k8s-dashboard');
   const span = tracer.startSpan('get_routes');
 
   try {
-    // Get standard ingresses
     const ingressSpan = tracer.startSpan('get_ingresses');
     const ingressResponse = await k8sApi.listIngressForAllNamespaces();
     const ingresses = await Promise.all(ingressResponse.body.items.map(async ingress => {
@@ -85,7 +80,6 @@ app.get('/api/routes', async (req, res) => {
     ingressSpan.setStatus({ code: SpanStatusCode.OK });
     ingressSpan.end();
 
-    // Get Traefik IngressRoutes
     const ingressRouteSpan = tracer.startSpan('get_ingressroutes');
     const ingressRouteResponse = await customObjectsApi.listClusterCustomObject(
       'traefik.io',

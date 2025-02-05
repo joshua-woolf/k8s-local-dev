@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "dashboard.labels" . | nindent 4 }}
+  name: dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/name: dashboard
+  template:
+    metadata:
+      labels:
+        {{- include "dashboard.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4318
+          image: registry.local.dev:5001/dashboard:latest
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          name: dashboard
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+      nodeSelector:
+        kubernetes.io/os: linux
+      serviceAccountName: dashboard

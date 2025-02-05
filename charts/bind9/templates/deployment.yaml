@@ -19,12 +19,12 @@ spec:
         app.kubernetes.io/version: 9.18-22.04_beta
     spec:
       containers:
-        - command:
-            - /usr/sbin/named
-          args:
+        - args:
             - -g
             - -c
             - /etc/bind/named.conf
+          command:
+            - /usr/sbin/named
           image: registry.local.dev:5001/ubuntu/bind9:9.18-22.04_beta
           livenessProbe:
             initialDelaySeconds: 10

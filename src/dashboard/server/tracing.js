@@ -6,24 +6,20 @@ const { Resource } = require('@opentelemetry/resources');
 const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
 const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-express');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
-const { diag, DiagConsoleLogger, DiagLogLevel } = require('@opentelemetry/api');
-
-// Enable debug logging
-diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
 function setupTelemetry() {
   try {
     console.log('Initializing OpenTelemetry...');
 
     const resource = new Resource({
-      [SemanticResourceAttributes.SERVICE_NAME]: 'k8s-dashboard',
+      [SemanticResourceAttributes.SERVICE_NAME]: 'dashboard',
       [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
       [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]: process.env.NODE_ENV || 'development'
     });
 
     const commonExporterConfig = {
-      url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4318',
-      timeoutMillis: 30000, // 30 second timeout
+      url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+      timeoutMillis: 30000,
       concurrencyLimit: 10,
     };
 
@@ -50,7 +46,7 @@ function setupTelemetry() {
         getNodeAutoInstrumentations({
           '@opentelemetry/instrumentation-http': {
             enabled: true,
-            ignoreOutgoingUrls: [/\/v1\/traces$/, /\/v1\/metrics$/], // Prevent infinite loops
+            ignoreOutgoingUrls: [/\/v1\/traces$/, /\/v1\/metrics$/],
           },
           '@opentelemetry/instrumentation-express': {
             enabled: true,
@@ -65,7 +61,6 @@ function setupTelemetry() {
       }),
     });
 
-    // Start the SDK - handle both Promise and non-Promise return types
     try {
       const startResult = sdk.start();
       if (startResult && typeof startResult.then === 'function') {
@@ -83,7 +78,6 @@ function setupTelemetry() {
       console.error('Error starting OpenTelemetry SDK:', error);
     }
 
-    // Graceful shutdown
     process.on('SIGTERM', () => {
       console.log('Shutting down OpenTelemetry...');
       try {
