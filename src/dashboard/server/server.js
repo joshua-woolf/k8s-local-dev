@@ -31,13 +31,17 @@ async function getCredentialsFromSecret(namespace, secretName, usernameAnnotatio
     span.setAttribute('namespace', namespace);
     span.setAttribute('secretName', secretName);
 
-    const secret = await coreV1Api.readNamespacedSecret(secretName, namespace);
+    const secret = await coreV1Api.readNamespacedSecret({
+      name: secretName,
+      namespace: namespace
+    });
+
     const username = usernameAnnotation;
     let password;
 
     if (passwordJsonPath) {
       const jsonPath = passwordJsonPath.replace(/[{}]/g, '');
-      const data = secret.body.data;
+      const data = secret.data;
       password = Buffer.from(data[jsonPath.split('.')[2]], 'base64').toString();
     }
 
@@ -62,7 +66,8 @@ app.get('/api/routes', async (req, res) => {
   try {
     const ingressSpan = tracer.startSpan('get_ingresses');
     const ingressResponse = await k8sApi.listIngressForAllNamespaces();
-    const ingresses = await Promise.all(ingressResponse.body.items.map(async ingress => {
+
+    const ingresses = await Promise.all((ingressResponse?.items || []).map(async ingress => {
       const credentials = await getCredentialsFromSecret(
         ingress.metadata.namespace,
         ingress.metadata.annotations?.['credentials-password-secret'],
@@ -81,19 +86,32 @@ app.get('/api/routes', async (req, res) => {
     ingressSpan.end();
 
     const ingressRouteSpan = tracer.startSpan('get_ingressroutes');
-    const ingressRouteResponse = await customObjectsApi.listClusterCustomObject(
-      'traefik.io',
-      'v1alpha1',
-      'ingressroutes'
-    );
-    const ingressRoutes = ingressRouteResponse.body.items.map(route => ({
-      name: route.metadata.annotations?.['friendly-name'] || route.metadata.name,
-      urls: route.spec.routes.map(r => {
-        const host = route.spec.routes[0].match.split('Host(`')[1]?.split('`)')[0];
-        return host ? `https://${host}` : 'No host specified';
-      })
-    }));
-    ingressRouteSpan.setStatus({ code: SpanStatusCode.OK });
+    let ingressRoutes = [];
+    try {
+      const ingressRouteResponse = await customObjectsApi.listClusterCustomObject({
+        group: 'traefik.io',
+        version: 'v1alpha1',
+        plural: 'ingressroutes'
+      });
+      ingressRoutes = (ingressRouteResponse?.items || []).map(route => ({
+        name: route.metadata.annotations?.['friendly-name'] || route.metadata.name,
+        urls: route.spec.routes.map(r => {
+          const host = r.match.split('Host(`')[1]?.split('`)')[0];
+          return host ? `https://${host}` : 'No host specified';
+        })
+      }));
+      ingressRouteSpan.setStatus({ code: SpanStatusCode.OK });
+    } catch (error) {
+      if (error.statusCode === 404) {
+        console.log('Traefik CRDs not found - skipping IngressRoute processing');
+        ingressRouteSpan.setStatus({
+          code: SpanStatusCode.OK,
+          message: 'Traefik CRDs not installed'
+        });
+      } else {
+        throw error;
+      }
+    }
     ingressRouteSpan.end();
 
     span.setAttribute('ingress_count', ingresses.length);

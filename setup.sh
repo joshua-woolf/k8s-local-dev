@@ -328,6 +328,7 @@ sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
 
 # Dashboard
 docker build -t registry.local.dev:5001/dashboard:latest ./src/dashboard
+docker run --rm -v "/var/run/docker.sock:/var/run/docker.sock" -v "$HOME/Library/Caches:/root/.cache/" ghcr.io/aquasecurity/trivy:0.59.0 image "registry.local.dev:5001/dashboard:latest"
 docker push registry.local.dev:5001/dashboard:latest
 
 helm upgrade dashboard ./charts/dashboard \
