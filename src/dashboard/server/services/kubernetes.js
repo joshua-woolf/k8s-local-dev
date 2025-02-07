@@ -22,7 +22,6 @@ class KubernetesService {
             ingress.metadata.namespace,
             ingress.metadata.annotations?.['credentials-password-secret'],
             ingress.metadata.annotations?.['credentials-username'],
-            ingress.metadata.annotations?.['credentials-password'],
             ingress.metadata.annotations?.['credentials-password-jsonpath']
           );
 
@@ -91,7 +90,6 @@ class KubernetesService {
     namespace,
     secretName,
     usernameAnnotation,
-    passwordAnnotation,
     passwordJsonPath
   ) {
     const tracer = trace.getTracer('dashboard');
@@ -103,13 +101,17 @@ class KubernetesService {
       span.setAttribute('namespace', namespace);
       span.setAttribute('secretName', secretName);
 
-      const secret = await this.coreV1Api.readNamespacedSecret(secretName, namespace);
+      const secret = await this.coreV1Api.readNamespacedSecret({
+        name: secretName,
+        namespace: namespace
+      });
+
       const username = usernameAnnotation;
       let password;
 
       if (passwordJsonPath) {
         const jsonPath = passwordJsonPath.replace(/[{}]/g, '');
-        const data = secret.body.data;
+        const data = secret.data;
         password = Buffer.from(data[jsonPath.split('.')[2]], 'base64').toString();
       }
 
