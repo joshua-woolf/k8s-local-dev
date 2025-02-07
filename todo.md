@@ -3,6 +3,8 @@ Improve k8s-dashboard:
   - Add tests.
   - Refactor.
 
+Check on Grafana password changes during reruns.
+
 Refactor scripts.
 Add keda.
 

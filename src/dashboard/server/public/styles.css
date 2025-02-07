@@ -1,4 +1,12 @@
+/* Base theme */
 :root {
+  --transition-duration: 0.01ms;
+  --animation-duration: 0.1s;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
   /* Light theme variables */
   --color-bg-primary: #ffffff;
   --color-bg-secondary: #f3f4f6;
@@ -8,14 +16,14 @@
   --color-border: #e5e7eb;
   --color-accent-bg: #dbeafe;
   --color-hover-bg: #f9fafb;
-
-  /* Animation durations */
-  --transition-duration: 0.3s;
-  --animation-duration: 0.5s;
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+  --color-card-shadow: rgba(0, 0, 0, 0.1);
 }
 
 /* Dark theme variables */
-html.dark {
+:root[class~="dark"] {
   --color-bg-primary: #111827;
   --color-bg-secondary: #1f2937;
   --color-text-primary: #f3f4f6;
@@ -24,84 +32,114 @@ html.dark {
   --color-border: #374151;
   --color-accent-bg: #1e3a8a;
   --color-hover-bg: #2d3748;
+  --color-success: #059669;
+  --color-error: #dc2626;
+  --color-warning: #d97706;
+  --color-card-shadow: rgba(0, 0, 0, 0.25);
 }
 
 /* Base styles */
 * {
   transition: background-color var(--transition-duration) ease,
               color var(--transition-duration) ease,
-              border-color var(--transition-duration) ease;
+              border-color var(--transition-duration) ease,
+              opacity var(--transition-duration) ease,
+              transform var(--transition-duration) ease,
+              box-shadow var(--transition-duration) ease;
 }
 
-/* Remove the conflicting body background-color */
-body {
-  transition: background-color var(--transition-duration) ease;
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes copySuccess {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-}
-
-.fade-in {
-  animation: fadeIn var(--animation-duration) ease-in;
-}
-
-/* Card styles */
-.bg-white {
-  background-color: var(--color-bg-primary);
-}
-
-/* Dark mode overrides */
-html.dark .bg-white {
-  background-color: var(--color-bg-primary);
-}
-
-html.dark .bg-gray-100 {
-  background-color: var(--color-bg-secondary);
-}
-
-html.dark .text-gray-700 {
-  color: var(--color-text-primary);
-}
-
-html.dark .text-gray-600 {
-  color: var(--color-text-secondary);
-}
-
-html.dark .text-blue-600 {
-  color: var(--color-text-accent);
-}
-
-html.dark .bg-blue-100 {
-  background-color: var(--color-accent-bg);
-}
-
-html.dark .border-gray-200 {
-  border-color: var(--color-border);
-}
-
-html.dark .hover\:bg-gray-50:hover {
-  background-color: var(--color-hover-bg);
-}
-
-html.dark .hover\:text-blue-600:hover {
-  color: var(--color-text-accent);
-}
-
-/* Code block styles */
+/* Code element styles */
 code {
+  transition: none !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.credentials-code {
   background-color: var(--color-bg-secondary);
   color: var(--color-text-primary);
   padding: 0.375rem 0.75rem;
   border-radius: 0.25rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+html {
+  background-color: var(--color-bg-secondary);
+}
+
+body {
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-secondary);
+  min-height: 100vh;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes copySuccess {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.fade-in {
+  animation: fadeIn var(--animation-duration) cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Refresh button animation */
+#refresh-button.animate-spin svg {
+  animation: spin 1s linear infinite;
+}
+
+/* Card styles */
+.bg-white {
+  background-color: var(--color-bg-primary) !important;
+  transition: transform var(--transition-duration) ease,
+              box-shadow var(--transition-duration) ease !important;
+}
+
+/* .bg-white:hover {
+  transform: translateY(-2px);
+} */
+
+/* Dark mode shadow adjustments */
+/* .dark .bg-white {
+  box-shadow: var(--shadow);
+} */
+
+/* .dark .bg-white:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+} */
+
+/* Search input styles */
+#route-search {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+  transition: box-shadow var(--transition-duration) ease,
+              background-color var(--transition-duration) ease;
+}
+
+#route-search:focus {
+  box-shadow: 0 0 0 2px var(--color-text-accent);
+}
+
+#route-search::placeholder {
+  color: var(--color-text-secondary);
 }
 
 /* Copy button styles */
@@ -110,7 +148,7 @@ code {
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 0.25rem;
-  transition: all var(--transition-duration);
+  transition: all var(--transition-duration) ease;
 }
 
 .copy-button:hover {
@@ -125,20 +163,12 @@ code {
 
 .copy-success {
   animation: copySuccess var(--transition-duration) ease-in-out;
-}
-
-/* Theme toggle button */
-#theme-toggle {
-  background-color: var(--color-bg-secondary);
-  color: var(--color-text-secondary);
-}
-
-#theme-toggle:hover {
-  color: var(--color-text-primary);
+  color: var(--color-success) !important;
 }
 
 /* Loading spinner */
 .animate-spin {
+  animation: spin 1s linear infinite;
   border-color: var(--color-text-accent);
 }
 
@@ -155,22 +185,39 @@ code {
   border: 0;
 }
 
-/* Print styles */
-@media print {
-  body {
-    background-color: white;
-  }
+/* Focus styles */
+:focus {
+  outline: none;
+}
 
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Hover effects */
+.group:hover .group-hover\:opacity-100 {
+  opacity: 1;
+}
+
+/* Responsive styles */
+@media (max-width: 640px) {
   .container {
-    max-width: none;
-    padding: 0;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 
-  #theme-toggle {
-    display: none;
+  .grid {
+    gap: 1rem;
   }
+}
 
-  .copy-button {
-    display: none;
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
