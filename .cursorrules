@@ -34,3 +34,4 @@ Keep configuration to a minimum, only introduce configuration when absolutely ne
 Always consider the performance and security implications of any changes.
 Don't add unnecessary comments to code, prefer naming and structuring code in a way that is easy to understand.
 When writing code, always consider that it will be running in a container on a Kubernetes cluster. Cater for any issues that may arise from this (e.g. shut down gracefully, etc.).
+When creating UIs, always provider light and dark modes and ensure they are consistent with one another.
