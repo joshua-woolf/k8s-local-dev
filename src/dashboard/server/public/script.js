@@ -21,7 +21,12 @@ class ThemeManager {
   }
 
   init() {
-    this.setTheme(this.getThemePreference());
+    // Apply theme immediately to prevent flash
+    const theme = this.getThemePreference();
+    document.documentElement.classList.add(theme);
+
+    // Initialize the rest after DOM is ready
+    this.setTheme(theme);
     this.themeToggle.addEventListener('click', () => this.toggleTheme());
     this.updateThemeToggleIcons();
 
@@ -34,12 +39,16 @@ class ThemeManager {
   }
 
   getThemePreference() {
-    return localStorage.getItem('theme') ||
-           (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      return savedTheme;
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
 
   setTheme(theme) {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(theme);
     localStorage.setItem('theme', theme);
     this.updateThemeToggleIcons();
   }
@@ -102,7 +111,7 @@ class RouteManager {
         <div class="space-y-2">
           ${route.urls.map(url => `
             <a href="${this.escapeHtml(url)}" target="_blank" class="block hover:bg-gray-50 p-2 rounded transition-colors">
-              <div class="flex items-center text-gray-700 hover:text-blue-600">
+              <div class="flex items-center text-gray-600 hover:text-blue-600">
                 <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                 </svg>
@@ -125,7 +134,7 @@ class RouteManager {
 
     return `
       <div class="mt-4 p-4 border border-gray-200 rounded-md">
-        <h3 class="text-sm font-medium text-gray-700 mb-2">Credentials</h3>
+        <h3 class="text-sm font-medium text-gray-600 mb-2">Credentials</h3>
         <div class="space-y-2">
           <div class="flex items-center">
             <span class="text-sm text-gray-600 w-20">Username:</span>
