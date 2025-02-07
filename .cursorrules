@@ -27,3 +27,4 @@ When writing code, use the latest available version of packages.
 When writing code, always pin versions for any dependencies to enable deterministic builds.
 When writing code, use consistent naming conventions.
 When writing code, prefer simple smaller functions with a single purpose, generally try to keep a function at or below 10 lines of code, but don't do this if it introduces unnecessary complexity.
+When creating tests, feel free to refactor project code to make testing easier.
