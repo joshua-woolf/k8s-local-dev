@@ -28,3 +28,9 @@ When writing code, always pin versions for any dependencies to enable determinis
 When writing code, use consistent naming conventions.
 When writing code, prefer simple smaller functions with a single purpose, generally try to keep a function at or below 10 lines of code, but don't do this if it introduces unnecessary complexity.
 When creating tests, feel free to refactor project code to make testing easier.
+When creating APIs, think about making them backward compatible, and design them in a way that they can be easily extended without impacting existing callers.
+When creating UIs, consider the UX of the UI and make sure it is easy to use and understand. Make it beautiful and modern, but keep it clean and simple.
+Keep configuration to a minimum, only introduce configuration when absolutely necessary.
+Always consider the performance and security implications of any changes.
+Don't add unnecessary comments to code, prefer naming and structuring code in a way that is easy to understand.
+When writing code, always consider that it will be running in a container on a Kubernetes cluster. Cater for any issues that may arise from this (e.g. shut down gracefully, etc.).
