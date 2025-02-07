@@ -1,117 +1,46 @@
-.fade-in {
-  animation: fadeIn 0.5s ease-in;
+:root {
+  /* Light theme variables */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f3f4f6;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-accent: #2563eb;
+  --color-border: #e5e7eb;
+  --color-accent-bg: #dbeafe;
+  --color-hover-bg: #f9fafb;
+
+  /* Animation durations */
+  --transition-duration: 0.3s;
+  --animation-duration: 0.5s;
 }
 
-@keyframes fadeIn {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
+/* Dark theme variables */
+html.dark {
+  --color-bg-primary: #1f2937;
+  --color-bg-secondary: #374151;
+  --color-text-primary: #f3f4f6;
+  --color-text-secondary: #9ca3af;
+  --color-text-accent: #60a5fa;
+  --color-border: #4b5563;
+  --color-accent-bg: #1e3a8a;
+  --color-hover-bg: #374151;
 }
 
-/* Dark mode styles */
-html.dark body {
-  background-color: #111827;
-}
-
-html.dark h1 {
-  color: #ffffff;
-}
-
-html.dark p {
-  color: #d1d5db;
-}
-
-html.dark .bg-white {
-  background-color: #1f2937;
-}
-
-html.dark .text-gray-700 {
-  color: #d1d5db;
-}
-
-html.dark .hover\:bg-gray-50:hover {
-  background-color: #374151;
-}
-
-html.dark #theme-toggle {
-  background-color: #374151;
-  color: #d1d5db;
-}
-
-html.dark .text-gray-800 {
-  color: #f3f4f6;
-}
-
-html.dark .text-gray-600 {
-  color: #9ca3af;
-}
-
-html.dark .text-blue-600 {
-  color: #60a5fa;
-}
-
-html.dark .bg-blue-100 {
-  background-color: #1e3a8a;
-}
-
-html.dark .hover\:text-blue-600:hover {
-  color: #93c5fd;
-}
-
-html.dark .bg-gray-100 {
-  background-color: #111827;
-}
-
-html.dark .bg-gray-50 {
-  background-color: #1f2937;
-}
-
-html.dark .border-gray-200 {
-  border-color: #374151;
-}
-
-html.dark code {
-  background-color: #374151;
-  color: #e5e7eb;
-}
-
-html.dark .text-gray-700.mb-2 {
-  color: #e5e7eb;
-}
-
-/* Light mode code styles */
-code {
-  background-color: #f3f4f6;
-  color: #111827;
-}
-
-/* Add transition for smooth theme switching */
+/* Base styles */
 * {
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color var(--transition-duration) ease,
+              color var(--transition-duration) ease,
+              border-color var(--transition-duration) ease;
 }
 
-html.dark .copy-button {
-  color: #9ca3af;
+body {
+  background-color: var(--color-bg-secondary);
 }
 
-html.dark .copy-button:hover {
-  color: #d1d5db;
-}
-
-.copy-button {
-  color: #6b7280;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-
-.copy-button:hover {
-  color: #374151;
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
-.copy-button.dark:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes copySuccess {
@@ -119,6 +48,120 @@ html.dark .copy-button:hover {
   50% { transform: scale(1.2); }
 }
 
+.fade-in {
+  animation: fadeIn var(--animation-duration) ease-in;
+}
+
+/* Card styles */
+.bg-white {
+  background-color: var(--color-bg-primary);
+}
+
+.text-gray-700 {
+  color: var(--color-text-primary);
+}
+
+.text-gray-600 {
+  color: var(--color-text-secondary);
+}
+
+.text-blue-600 {
+  color: var(--color-text-accent);
+}
+
+.bg-blue-100 {
+  background-color: var(--color-accent-bg);
+}
+
+.border-gray-200 {
+  border-color: var(--color-border);
+}
+
+/* Hover states */
+.hover\:bg-gray-50:hover {
+  background-color: var(--color-hover-bg);
+}
+
+.hover\:text-blue-600:hover {
+  color: var(--color-text-accent);
+}
+
+/* Code block styles */
+code {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Copy button styles */
+.copy-button {
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: all var(--transition-duration);
+}
+
+.copy-button:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-hover-bg);
+}
+
+.copy-button:focus {
+  outline: 2px solid var(--color-text-accent);
+  outline-offset: 2px;
+}
+
 .copy-success {
-  animation: copySuccess 0.3s ease-in-out;
+  animation: copySuccess var(--transition-duration) ease-in-out;
+}
+
+/* Theme toggle button */
+#theme-toggle {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+}
+
+#theme-toggle:hover {
+  color: var(--color-text-primary);
+}
+
+/* Loading spinner */
+.animate-spin {
+  border-color: var(--color-text-accent);
+}
+
+/* Accessibility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Print styles */
+@media print {
+  body {
+    background-color: white;
+  }
+
+  .container {
+    max-width: none;
+    padding: 0;
+  }
+
+  #theme-toggle {
+    display: none;
+  }
+
+  .copy-button {
+    display: none;
+  }
 }
