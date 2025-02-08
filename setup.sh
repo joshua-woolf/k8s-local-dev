@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Helm Repos
 helm repo add elastic https://helm.elastic.co
 helm repo add flagger https://flagger.app
@@ -15,55 +17,59 @@ helm repo add traefik https://traefik.github.io/charts
 helm repo update elastic flagger gatekeeper jetstack joxit metrics-server open-telemetry podinfo prometheus-community traefik
 
 # Trusted Root CA Certificate
-if [ ! -f "./certs/ca.key" ] || [ ! -f "./certs/ca.crt" ]; then
-  openssl genrsa -out "./certs/ca.key" 4096
-  openssl req -x509 -new -nodes -key "./certs/ca.key" -sha256 -days 3650 -out "./certs/ca.crt" \
+mkdir -p "./secrets"
+
+if [ ! -f "./secrets/ca.key" ] || [ ! -f "./secrets/ca.crt" ]; then
+  openssl genrsa -out "./secrets/ca.key" 4096
+  openssl req -x509 -new -nodes -key "./secrets/ca.key" -sha256 -days 3650 -out "./secrets/ca.crt" \
     -subj "/CN=Local Dev Root CA/O=Local Development/C=US"
-  sudo chmod +r "./certs/ca.key"
+  sudo chmod +r "./secrets/ca.key"
 fi
 
 if ! security find-certificate -c "Local Dev Root" /Library/Keychains/System.keychain >/dev/null 2>&1; then
   echo "Installing Root CA to System Keychain..."
-  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "./certs/ca.crt"
+  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "./secrets/ca.crt"
 fi
 
 # TSIG Key
-if [ ! -f "./certs/tsig.key" ]; then
-  openssl rand -base64 32 > "./certs/tsig.key"
+if [ ! -f "./secrets/tsig.key" ]; then
+  openssl rand -base64 32 > "./secrets/tsig.key"
 fi
 
-TSIG_KEY=$(cat "./certs/tsig.key")
+TSIG_KEY=$(cat "./secrets/tsig.key")
 
 # Create Registry Certificate Private Key
-openssl genrsa -out "./certs/registry.key" 2048
+openssl genrsa -out "./secrets/registry.key" 2048
 
 # Create Registry Certificate Signing Request
 openssl req -new \
-  -key "./certs/registry.key" \
+  -key "./secrets/registry.key" \
   -config "./configs/certificate-authority/registry.conf" \
-  -out "./certs/registry.csr"
+  -out "./secrets/registry.csr"
 
-sudo chmod +r "./certs/registry.key"
+sudo chmod +r "./secrets/registry.key"
 
 # Sign the Registry Certificate with the Certificate Authority
 openssl x509 -req \
-  -in "./certs/registry.csr" \
-  -CA "./certs/ca.crt" \
-  -CAkey "./certs/ca.key" \
+  -in "./secrets/registry.csr" \
+  -CA "./secrets/ca.crt" \
+  -CAkey "./secrets/ca.key" \
   -CAcreateserial \
-  -out "./certs/registry.crt" \
+  -out "./secrets/registry.crt" \
   -days 365 \
   -sha256 \
   -extfile "./configs/certificate-authority/registry-signing.conf" \
   -extensions v3_ext
 
 # Container Registry
+mkdir -p "./cache/registry"
+
 if docker ps -f name=registry | grep -q registry; then
   echo "Registry container already running"
 else
   docker run -d --restart=always \
-    -v ./certs:/certs \
-    -v ./registry/data:/var/lib/registry \
+    -v ./secrets:/certs \
+    -v ./cache/registry:/var/lib/registry \
     -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
     -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers='["Authorization", "Accept", "Cache-Control"]' \
     -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods='["DELETE", "GET", "HEAD", "OPTIONS"]' \
@@ -132,8 +138,12 @@ for source_image in "${IMAGES[@]}"; do
 done
 
 # Cluster
+mkdir -p "./temp"
+
+cat ./configs/cluster/kind-config.yaml | envsubst > "./temp/kind-config.yaml"
+
 if ! kind get clusters | grep -q "^kind$"; then
-  kind create cluster --config "./configs/cluster/kind-config.yaml"
+  kind create cluster --config "./temp/kind-config.yaml"
 else
   echo "Cluster 'kind' already exists, skipping creation"
 fi
@@ -153,13 +163,19 @@ helm upgrade grafana-dashboards ./charts/grafana-dashboards \
   --wait
 
 # Prometheus Stack
+if [ ! -f "./secrets/grafana.key" ]; then
+  (LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 24) > "./secrets/grafana.key"
+fi
+
+GRAFANA_PASSWORD=$(cat "./secrets/grafana.key")
+
 helm upgrade kube-prometheus prometheus-community/kube-prometheus-stack \
   --create-namespace \
   --hide-notes \
   --install \
   --namespace monitoring \
   --values "./values/prometheus-values.yaml" \
-  --set "grafana.adminPassword=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 24)" \
+  --set "grafana.adminPassword=$GRAFANA_PASSWORD" \
   --version 68.3.0 \
   --wait
 
@@ -198,8 +214,8 @@ helm upgrade cluster-issuer ./charts/cluster-issuer \
   --hide-notes \
   --install \
   --namespace cert-manager \
-  --set "ca.crt=$(base64 -i "./certs/ca.crt")" \
-  --set "ca.key=$(base64 -i "./certs/ca.key")" \
+  --set "ca.crt=$(base64 -i "./secrets/ca.crt")" \
+  --set "ca.key=$(base64 -i "./secrets/ca.key")" \
   --wait
 
 # DNS

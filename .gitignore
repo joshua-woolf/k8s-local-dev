@@ -277,5 +277,6 @@ dist
 
 # End of https://www.toptal.com/developers/gitignore/api/node
 
-cache/*
-secrets/*
+cache
+secrets
+temp

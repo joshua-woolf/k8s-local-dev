@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 kind delete cluster
 
 if docker ps -f name=registry | grep -q registry; then
