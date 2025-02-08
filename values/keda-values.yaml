@@ -1,0 +1,42 @@
+image:
+  keda:
+    registry: registry.local.dev:5001
+    repository: ghcr.io/kedacore/keda
+    tag: 2.16.1
+  metricsApiServer:
+    registry: registry.local.dev:5001
+    repository: ghcr.io/kedacore/keda-metrics-apiserver
+    tag: 2.16.1
+  webhooks:
+    registry: registry.local.dev:5001
+    repository: ghcr.io/kedacore/keda-admission-webhooks
+    tag: 2.16.1
+
+nodeSelector:
+  kubernetes.io/os: linux
+
+opentelemetry:
+  collector:
+    uri: http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4318
+  operator:
+    enabled: true
+
+prometheus:
+  metricServer:
+    enabled: true
+    serviceMonitor:
+      additionalLabels:
+        release: kube-prometheus
+      enabled: true
+  operator:
+    enabled: true
+    serviceMonitor:
+      additionalLabels:
+        release: kube-prometheus
+      enabled: true
+  webhooks:
+    enabled: true
+    serviceMonitor:
+      additionalLabels:
+        release: kube-prometheus
+      enabled: true

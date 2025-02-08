@@ -2,8 +2,6 @@ Improve k8s-dashboard:
   - Add canary.
   - Add tests.
 
-Add keda.
-
 Switch to using cloud-provider-kind to setup a load balancer rather than using node ports.
 
 Change entire setup to use flux for deployment.

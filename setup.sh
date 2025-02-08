@@ -12,12 +12,13 @@ helm repo add flagger https://flagger.app
 helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 helm repo add jetstack https://charts.jetstack.io
 helm repo add joxit https://helm.joxit.dev
+helm repo add keda https://kedacore.github.io/charts
 helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add traefik https://traefik.github.io/charts
 
-helm repo update elastic flagger gatekeeper jetstack joxit metrics-server open-telemetry prometheus-community traefik
+helm repo update elastic flagger gatekeeper jetstack joxit keda metrics-server open-telemetry prometheus-community traefik
 
 # Trusted Root CA Certificate
 mkdir -p "./temp/secrets"
@@ -103,6 +104,9 @@ declare -a IMAGES=(
   "docker.io/traefik:v3.3.2"
   "ghcr.io/fluxcd/flagger:1.40.0"
   "ghcr.io/fluxcd/flagger-loadtester:0.34.0"
+  "ghcr.io/kedacore/keda:2.16.1"
+  "ghcr.io/kedacore/keda-metrics-apiserver:2.16.1"
+  "ghcr.io/kedacore/keda-admission-webhooks:2.16.1"
   "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.118.0"
   "joxit/docker-registry-ui:2.5.2"
   "openpolicyagent/gatekeeper:v3.18.2"
@@ -350,6 +354,16 @@ helm upgrade flagger-loadtester flagger/loadtester \
   --namespace flagger \
   --values "./values/flagger-loadtester-values.yaml" \
   --version 0.34.0 \
+  --wait
+
+# KEDA
+helm upgrade keda keda/keda \
+  --create-namespace \
+  --hide-notes \
+  --install \
+  --namespace keda \
+  --values "./values/keda-values.yaml" \
+  --version 2.16.1 \
   --wait
 
 # Flush DNS Cache
