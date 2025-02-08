@@ -1,7 +1,6 @@
 Improve k8s-dashboard:
   - Add canary.
   - Add tests.
-  - Refactor.
 
 Check on Grafana password changes during reruns.
 
