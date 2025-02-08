@@ -35,26 +35,26 @@ fi
 TSIG_KEY=$(cat "./certs/tsig.key")
 
 # Create Registry Certificate Private Key
-openssl genrsa -out "certs/registry.key" 2048
+openssl genrsa -out "./certs/registry.key" 2048
 
 # Create Registry Certificate Signing Request
 openssl req -new \
-  -key "certs/registry.key" \
-  -config "certs/registry.conf" \
-  -out "certs/registry.csr"
+  -key "./certs/registry.key" \
+  -config "./configs/certificate-authority/registry.conf" \
+  -out "./certs/registry.csr"
 
 sudo chmod +r "./certs/registry.key"
 
 # Sign the Registry Certificate with the Certificate Authority
 openssl x509 -req \
-  -in "certs/registry.csr" \
-  -CA "certs/ca.crt" \
-  -CAkey "certs/ca.key" \
+  -in "./certs/registry.csr" \
+  -CA "./certs/ca.crt" \
+  -CAkey "./certs/ca.key" \
   -CAcreateserial \
-  -out "certs/registry.crt" \
+  -out "./certs/registry.crt" \
   -days 365 \
   -sha256 \
-  -extfile "certs/registry-signing.conf" \
+  -extfile "./configs/certificate-authority/registry-signing.conf" \
   -extensions v3_ext
 
 # Container Registry
@@ -133,7 +133,7 @@ done
 
 # Cluster
 if ! kind get clusters | grep -q "^kind$"; then
-  kind create cluster --config kind-config.yaml
+  kind create cluster --config "./configs/cluster/kind-config.yaml"
 else
   echo "Cluster 'kind' already exists, skipping creation"
 fi
