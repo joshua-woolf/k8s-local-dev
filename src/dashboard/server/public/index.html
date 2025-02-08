@@ -15,27 +15,31 @@
     } else {
       document.documentElement.classList.remove('dark');
     }
-  </script>
-  <!-- Tailwind with dark mode enabled -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            gray: {
-              850: '#1a2234'
-            }
-          }
-        }
+
+    // Add helper for theme changes
+    window.toggleTheme = () => {
+      // Add class to prevent transitions during theme change
+      document.documentElement.classList.add('changing-theme');
+
+      // Toggle theme
+      if (document.documentElement.classList.contains('dark')) {
+        document.documentElement.classList.remove('dark');
+        localStorage.theme = 'light';
+      } else {
+        document.documentElement.classList.add('dark');
+        localStorage.theme = 'dark';
       }
-    }
+
+      // Remove the class after a short delay
+      requestAnimationFrame(() => {
+        document.documentElement.classList.remove('changing-theme');
+      });
+    };
   </script>
-  <link rel="stylesheet" href="styles.css">
+  <link href="/styles.dist.css" rel="stylesheet">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%234A5568' d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z'/%3E%3C/svg%3E">
 </head>
-<body class="bg-gray-100 dark:bg-gray-850 min-h-screen text-gray-900 dark:text-gray-100">
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen text-gray-900 dark:text-gray-100 antialiased">
   <div class="container mx-auto px-4 py-8">
     <header class="mb-8">
       <div class="flex justify-between items-center mb-6">
@@ -43,7 +47,7 @@
         <div class="flex items-center space-x-4">
           <button
             id="refresh-button"
-            class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-300"
+            class="p-2 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-300"
             aria-label="Refresh routes"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -52,8 +56,9 @@
           </button>
           <button
             id="theme-toggle"
-            class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-6700 dark:text-gray-300"
+            class="p-2 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-300"
             aria-label="Toggle theme"
+            onclick="toggleTheme()"
           >
             <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
               <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
@@ -68,11 +73,11 @@
         <input
           type="search"
           id="route-search"
-          class="w-full px-4 py-2 pl-10 pr-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full px-4 py-2 pl-10 pr-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Search applications..."
           aria-label="Search applications"
         >
-        <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-300 dark:text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       </div>
