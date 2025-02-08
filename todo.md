@@ -4,6 +4,9 @@ Improve k8s-dashboard:
 
 Check on Grafana password changes during reruns.
 
+look at dev container.
+add vscode configs.
+
 Refactor scripts.
 Add keda.
 
