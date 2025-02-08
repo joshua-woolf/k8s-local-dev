@@ -2,6 +2,8 @@
 
 set -e
 
+mkdir -p "./temp"
+
 # Helm Repos
 helm repo add elastic https://helm.elastic.co
 helm repo add flagger https://flagger.app
@@ -10,66 +12,65 @@ helm repo add jetstack https://charts.jetstack.io
 helm repo add joxit https://helm.joxit.dev
 helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
-helm repo add podinfo https://stefanprodan.github.io/podinfo
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add traefik https://traefik.github.io/charts
 
-helm repo update elastic flagger gatekeeper jetstack joxit metrics-server open-telemetry podinfo prometheus-community traefik
+helm repo update elastic flagger gatekeeper jetstack joxit metrics-server open-telemetry prometheus-community traefik
 
 # Trusted Root CA Certificate
-mkdir -p "./secrets"
+mkdir -p "./temp/secrets"
 
-if [ ! -f "./secrets/ca.key" ] || [ ! -f "./secrets/ca.crt" ]; then
-  openssl genrsa -out "./secrets/ca.key" 4096
-  openssl req -x509 -new -nodes -key "./secrets/ca.key" -sha256 -days 3650 -out "./secrets/ca.crt" \
+if [ ! -f "./temp/secrets/ca.key" ] || [ ! -f "./temp/secrets/ca.crt" ]; then
+  openssl genrsa -out "./temp/secrets/ca.key" 4096
+  openssl req -x509 -new -nodes -key "./temp/secrets/ca.key" -sha256 -days 3650 -out "./temp/secrets/ca.crt" \
     -subj "/CN=Local Dev Root CA/O=Local Development/C=US"
-  sudo chmod +r "./secrets/ca.key"
+  sudo chmod +r "./temp/secrets/ca.key"
 fi
 
 if ! security find-certificate -c "Local Dev Root" /Library/Keychains/System.keychain >/dev/null 2>&1; then
   echo "Installing Root CA to System Keychain..."
-  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "./secrets/ca.crt"
+  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "./temp/secrets/ca.crt"
 fi
 
 # TSIG Key
-if [ ! -f "./secrets/tsig.key" ]; then
-  openssl rand -base64 32 > "./secrets/tsig.key"
+if [ ! -f "./temp/secrets/tsig.key" ]; then
+  openssl rand -base64 32 > "./temp/secrets/tsig.key"
 fi
 
-TSIG_KEY=$(cat "./secrets/tsig.key")
+TSIG_KEY=$(cat "./temp/secrets/tsig.key")
 
 # Create Registry Certificate Private Key
-openssl genrsa -out "./secrets/registry.key" 2048
+openssl genrsa -out "./temp/secrets/registry.key" 2048
 
 # Create Registry Certificate Signing Request
 openssl req -new \
-  -key "./secrets/registry.key" \
+  -key "./temp/secrets/registry.key" \
   -config "./configs/certificate-authority/registry.conf" \
-  -out "./secrets/registry.csr"
+  -out "./temp/secrets/registry.csr"
 
-sudo chmod +r "./secrets/registry.key"
+sudo chmod +r "./temp/secrets/registry.key"
 
 # Sign the Registry Certificate with the Certificate Authority
 openssl x509 -req \
-  -in "./secrets/registry.csr" \
-  -CA "./secrets/ca.crt" \
-  -CAkey "./secrets/ca.key" \
+  -in "./temp/secrets/registry.csr" \
+  -CA "./temp/secrets/ca.crt" \
+  -CAkey "./temp/secrets/ca.key" \
   -CAcreateserial \
-  -out "./secrets/registry.crt" \
+  -out "./temp/secrets/registry.crt" \
   -days 365 \
   -sha256 \
   -extfile "./configs/certificate-authority/registry-signing.conf" \
   -extensions v3_ext
 
 # Container Registry
-mkdir -p "./cache/registry"
+mkdir -p "./temp/registry-cache"
 
 if docker ps -f name=registry | grep -q registry; then
   echo "Registry container already running"
 else
   docker run -d --restart=always \
-    -v ./secrets:/certs \
-    -v ./cache/registry:/var/lib/registry \
+    -v ./temp/secrets:/certs \
+    -v ./temp/registry-cache:/var/lib/registry \
     -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
     -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers='["Authorization", "Accept", "Cache-Control"]' \
     -e REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods='["DELETE", "GET", "HEAD", "OPTIONS"]' \
@@ -162,11 +163,11 @@ helm upgrade grafana-dashboards ./charts/grafana-dashboards \
   --wait
 
 # Prometheus Stack
-if [ ! -f "./secrets/grafana.key" ]; then
-  (LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 24) > "./secrets/grafana.key"
+if [ ! -f "./temp/secrets/grafana.key" ]; then
+  (LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 24) > "./temp/secrets/grafana.key"
 fi
 
-GRAFANA_PASSWORD=$(cat "./secrets/grafana.key")
+GRAFANA_PASSWORD=$(cat "./temp/secrets/grafana.key")
 
 helm upgrade kube-prometheus prometheus-community/kube-prometheus-stack \
   --create-namespace \
@@ -213,8 +214,8 @@ helm upgrade cluster-issuer ./charts/cluster-issuer \
   --hide-notes \
   --install \
   --namespace cert-manager \
-  --set "ca.crt=$(base64 -i "./secrets/ca.crt")" \
-  --set "ca.key=$(base64 -i "./secrets/ca.key")" \
+  --set "ca.crt=$(base64 -i "./temp/secrets/ca.crt")" \
+  --set "ca.key=$(base64 -i "./temp/secrets/ca.key")" \
   --wait
 
 # DNS
