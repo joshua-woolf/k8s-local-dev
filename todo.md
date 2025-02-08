@@ -2,8 +2,6 @@ Improve k8s-dashboard:
   - Add canary.
   - Add tests.
 
-remove podinfo
-
 look at dev container.
 add vscode configs.
 

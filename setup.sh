@@ -101,7 +101,6 @@ declare -a IMAGES=(
   "ghcr.io/fluxcd/flagger:1.40.0"
   "ghcr.io/fluxcd/flagger-loadtester:0.34.0"
   "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.118.0"
-  "ghcr.io/stefanprodan/podinfo:6.7.1"
   "joxit/docker-registry-ui:2.5.2"
   "openpolicyagent/gatekeeper:v3.18.2"
   "openpolicyagent/gatekeeper-crds:v3.18.2"
@@ -348,16 +347,6 @@ helm upgrade flagger-loadtester flagger/loadtester \
   --namespace flagger \
   --values "./values/flagger-loadtester-values.yaml" \
   --version 0.34.0 \
-  --wait
-
-# PodInfo
-helm upgrade podinfo podinfo/podinfo \
-  --create-namespace \
-  --hide-notes \
-  --install \
-  --namespace podinfo \
-  --values "./values/podinfo-values.yaml" \
-  --version 6.1.4 \
   --wait
 
 # Flush DNS Cache
