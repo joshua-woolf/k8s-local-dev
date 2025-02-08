@@ -2,10 +2,6 @@ Improve k8s-dashboard:
   - Add canary.
   - Add tests.
 
-look at dev container.
-add vscode configs.
-
-Refactor scripts.
 Add keda.
 
 Switch to using cloud-provider-kind to setup a load balancer rather than using node ports.

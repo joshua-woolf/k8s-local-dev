@@ -2,6 +2,8 @@
 
 set -e
 
+./scripts/configure-local-dns.sh
+
 mkdir -p "./temp"
 
 # Helm Repos
