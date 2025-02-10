@@ -1,5 +1,4 @@
 Add tests to dashboard.
-Look at Traefik OTEL integration.
 
 Switch to using cloud-provider-kind to setup a load balancer rather than using node ports.
 
