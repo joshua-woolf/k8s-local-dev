@@ -1,0 +1,24 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/target: local.dev
+    friendly-name: Dashboard
+  labels:
+    {{- include "dashboard.labels" . | nindent 4 }}
+  name: dashboard
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`dashboard.local.dev`)
+      kind: Rule
+      services:
+        - name: dashboard
+          kind: TraefikService
+          port: 80
+  tls:
+    secretName: dashboard-tls
+    domains:
+      - main: dashboard.local.dev

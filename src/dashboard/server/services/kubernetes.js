@@ -52,7 +52,7 @@ class KubernetesService {
 
     try {
       const ingressRouteResponse = await this.customObjectsApi.listClusterCustomObject({
-        group: 'traefik.io',
+        group: 'traefik.containo.us',
         version: 'v1alpha1',
         plural: 'ingressroutes',
       });

@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: dashboard
+spec:
+  commonName: dashboard.local.dev
+  dnsNames:
+    - dashboard.local.dev
+  issuerRef:
+    kind: ClusterIssuer
+    name: ca-issuer
+  secretName: dashboard-tls

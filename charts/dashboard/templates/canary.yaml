@@ -1,0 +1,36 @@
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  labels:
+    {{- include "dashboard.labels" . | nindent 4 }}
+  name: dashboard
+spec:
+  analysis:
+    interval: 15s
+    metrics:
+      - interval: 1m
+        name: request-success-rate
+        thresholdRange:
+          min: 99
+      - interval: 1m
+        name: request-duration
+        thresholdRange:
+          max: 500
+    stepWeight: 25
+    threshold: 20
+    webhooks:
+      - name: acceptance-test
+        metadata:
+          cmd: "curl -s http://dashboard-canary.dashboard.svc.cluster.local | grep 'ok'"
+          type: bash
+        timeout: 30s
+        type: pre-rollout
+        url: http://flagger-loadtester.flagger.svc.cluster.local
+  provider: traefik
+  service:
+    port: 80
+    targetPort: 3000
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: dashboard

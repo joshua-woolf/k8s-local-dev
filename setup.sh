@@ -101,7 +101,7 @@ declare -a IMAGES=(
   "docker.io/busybox:1.37.0"
   "docker.io/grafana/grafana:11.4.0"
   "docker.io/library/busybox:1.31.1"
-  "docker.io/traefik:v3.3.2"
+  "docker.io/traefik:v2.11.2"
   "ghcr.io/fluxcd/flagger:1.40.0"
   "ghcr.io/fluxcd/flagger-loadtester:0.34.0"
   "ghcr.io/kedacore/keda:2.16.1"
@@ -315,7 +315,7 @@ helm upgrade traefik traefik/traefik \
   --install \
   --namespace traefik \
   --values "./values/traefik-values.yaml" \
-  --version 34.1.0 \
+  --version 22.3.0 \
   --wait
 
 # External DNS
@@ -370,17 +370,25 @@ helm upgrade keda keda/keda \
 sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
 
 # Dashboard
-docker build -t registry.local.dev:5001/dashboard:latest ./src/dashboard
-docker run --rm -v "/var/run/docker.sock:/var/run/docker.sock" -v "$HOME/Library/Caches:/root/.cache/" ghcr.io/aquasecurity/trivy:0.59.0 image "registry.local.dev:5001/dashboard:latest"
-docker push registry.local.dev:5001/dashboard:latest
+if [ ! -f "./temp/dashboard_version" ]; then
+  echo "0" > "./temp/dashboard_version"
+fi
+
+DASHBOARD_VERSION=$(($(cat "./temp/dashboard_version") + 1))
+echo "$DASHBOARD_VERSION" > "./temp/dashboard_version"
+
+docker build -t "registry.local.dev:5001/dashboard:v${DASHBOARD_VERSION}" ./src/dashboard
+docker run --rm -v "/var/run/docker.sock:/var/run/docker.sock" -v "$HOME/Library/Caches:/root/.cache/" ghcr.io/aquasecurity/trivy:0.59.0 image "registry.local.dev:5001/dashboard:v${DASHBOARD_VERSION}"
+docker push "registry.local.dev:5001/dashboard:v${DASHBOARD_VERSION}"
 
 helm upgrade dashboard ./charts/dashboard \
   --create-namespace \
   --hide-notes \
   --install \
   --namespace dashboard \
+  --set "imageTag=v${DASHBOARD_VERSION}" \
   --wait
 
-kubectl rollout restart deployment/dashboard -n dashboard
-
 echo "Dashboard is running on https://dashboard.local.dev"
+
+hey -z 2m -q 100 -c 1 https://dashboard.local.dev

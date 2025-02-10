@@ -34,7 +34,7 @@ spec:
             - --source=ingress
             - --source=traefik-proxy
             - --domain-filter=local.dev
-            - --traefik-disable-legacy
+            - --traefik-disable-new
             - --interval=15s
             - --metrics-address=:7979
             - --log-level=info
