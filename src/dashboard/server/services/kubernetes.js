@@ -73,7 +73,7 @@ class KubernetesService {
 
             return {
               name: ingress.metadata.annotations?.['friendly-name'] || ingress.metadata.name,
-              urls: ingress.spec.routes.map((route) => route.match.split('Host(`')[1]?.split('`)')[0]),
+              urls: ingress.spec.routes.map((route) => `https://${route.match.split('Host(`')[1]?.split('`)')[0]}`),
               credentials,
             };
           })
