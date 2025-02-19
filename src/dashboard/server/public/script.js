@@ -122,10 +122,10 @@ class RouteManager {
    */
   createRouteCard(route) {
     return `
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg p-6 transition-all duration-200">
+      <div class="route-card bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg p-6 transition-all duration-200">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center">
-            <span class="text-lg font-semibold px-3 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg">
+            <span class="route-name text-lg font-semibold px-3 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg">
               ${this.escapeHtml(route.name)}
             </span>
           </div>
@@ -147,7 +147,7 @@ class RouteManager {
       <div class="group">
         <a href="${this.escapeHtml(url)}"
            target="_blank"
-           class="block p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
+           class="route-url block p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
            rel="noopener noreferrer">
           <div class="flex items-center text-gray-700 dark:text-gray-300">
             <svg class="h-4 w-4 mr-2 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
