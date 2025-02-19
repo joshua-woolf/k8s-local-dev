@@ -19,11 +19,11 @@ spec:
     stepWeight: 25
     threshold: 20
     webhooks:
-      - name: acceptance-test
+      - name: smoke-test
         metadata:
-          cmd: "curl -s http://dashboard-canary.dashboard.svc.cluster.local | grep 'ok'"
-          type: bash
-        timeout: 30s
+          cmd: test {{ .Release.Name }} -n {{ .Release.Namespace }}
+          type: helmv3
+        timeout: 60s
         type: pre-rollout
         url: http://flagger-loadtester.flagger.svc.cluster.local
   provider: traefik

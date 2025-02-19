@@ -8,5 +8,27 @@ podLabels:
   app.kubernetes.io/version: 0.34.0
 rbac:
   create: true
+  rules:
+    - apiGroups:
+        - ""
+      resources:
+        - pods
+      verbs:
+        - create
+        - delete
+        - get
+        - list
+        - watch
+    - apiGroups:
+        - ""
+      resources:
+        - secrets
+      verbs:
+        - get
+        - list
+        - patch
+        - update
+        - watch
+  scope: cluster
 securityContext:
   enabled: true

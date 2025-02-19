@@ -1,5 +1,3 @@
-Add tests to dashboard.
-
 Add dashboards to Grafana for flagger and load tester.
 Refine dashboards.
 
