@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 
 test('given dashboard is deployed when accessing homepage then dashboard route card exists', async ({ page }) => {
   // Arrange
-  await page.goto('https://dashboard.local.dev');
+  await page.goto('/');
 
   // Act
   const routeCard = page.locator('.route-card').filter({ hasText: 'Dashboard' });

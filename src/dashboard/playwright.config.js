@@ -7,7 +7,7 @@ module.exports = defineConfig({
     timeout: 5000
   },
   use: {
-    baseURL: 'https://dashboard.local.dev',
+    baseURL: process.env.DASHBOARD_URL || 'https://dashboard.local.dev',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure'
   },
