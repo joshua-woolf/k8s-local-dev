@@ -1,7 +1,5 @@
 Add tests to dashboard.
 
-Check missing otel traces for dashboard.
-
 Add dashboards to Grafana for flagger and load tester.
 Refine dashboards.
 
@@ -12,6 +10,8 @@ Switch to using cloud-provider-kind to setup a load balancer rather than using n
 Change entire setup to use flux for deployment.
 Convert script to powershell.
 
+Update things.
+
 Future enhancements:
   - mTLS
   - Network Policies
@@ -19,3 +19,4 @@ Future enhancements:
   - Secure Connections
   - Service Mesh
   - Storage
+  - Cloudflared
