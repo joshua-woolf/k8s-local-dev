@@ -377,9 +377,12 @@ fi
 DASHBOARD_VERSION=$(($(cat "./temp/dashboard_version") + 1))
 echo "$DASHBOARD_VERSION" > "./temp/dashboard_version"
 
-docker build -t "registry.local.dev:5001/dashboard:v${DASHBOARD_VERSION}" ./src/dashboard
+docker build -t "registry.local.dev:5001/dashboard:v${DASHBOARD_VERSION}" ./src/dashboard -f ./src/dashboard/server.Dockerfile
+docker build -t "registry.local.dev:5001/dashboard-tests:v${DASHBOARD_VERSION}" ./src/dashboard -f ./src/dashboard/tests.Dockerfile
 docker run --rm -v "/var/run/docker.sock:/var/run/docker.sock" -v "$HOME/Library/Caches:/root/.cache/" ghcr.io/aquasecurity/trivy:0.59.0 image "registry.local.dev:5001/dashboard:v${DASHBOARD_VERSION}"
+docker run --rm -v "/var/run/docker.sock:/var/run/docker.sock" -v "$HOME/Library/Caches:/root/.cache/" ghcr.io/aquasecurity/trivy:0.59.0 image "registry.local.dev:5001/dashboard-tests:v${DASHBOARD_VERSION}"
 docker push "registry.local.dev:5001/dashboard:v${DASHBOARD_VERSION}"
+docker push "registry.local.dev:5001/dashboard-tests:v${DASHBOARD_VERSION}"
 
 helm upgrade dashboard ./charts/dashboard \
   --create-namespace \
