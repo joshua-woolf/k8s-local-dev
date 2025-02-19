@@ -1,5 +1,7 @@
 Add tests to dashboard.
 
+Check missing otel traces for dashboard.
+
 Add dashboards to Grafana for flagger and load tester.
 Refine dashboards.
 
