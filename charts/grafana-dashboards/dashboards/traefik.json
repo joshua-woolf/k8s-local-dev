@@ -1434,7 +1434,10 @@
   "refresh": false,
   "schemaVersion": 37,
   "style": "dark",
-  "tags": [],
+  "tags": [
+    "ingress",
+    "traefik"
+  ],
   "templating": {
     "list": [
       {
@@ -1570,7 +1573,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Traefik Official Kubernetes Dashboard",
+  "title": "Traefik",
   "uid": "n5bu_kv4k",
   "version": 7,
   "weekStart": ""

@@ -2129,7 +2129,10 @@
   "revision": 1,
   "schemaVersion": 38,
   "style": "dark",
-  "tags": [],
+  "tags": [
+    "gatekeeper",
+    "open-policy-agent"
+  ],
   "templating": {
     "list": [
       {
@@ -2232,7 +2235,7 @@
     ]
   },
   "timezone": "UTC",
-  "title": "OPA Gatekeeper",
+  "title": "Gatekeeper",
   "uid": "YBgRZG6Mz",
   "version": 3,
   "weekStart": ""

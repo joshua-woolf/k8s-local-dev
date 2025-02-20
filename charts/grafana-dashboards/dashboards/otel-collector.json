@@ -5548,8 +5548,7 @@
   "refresh": "",
   "schemaVersion": 40,
   "tags": [
-    "opentelemetry",
-    "monitoringartist"
+    "opentelemetry"
   ],
   "templating": {
     "list": [

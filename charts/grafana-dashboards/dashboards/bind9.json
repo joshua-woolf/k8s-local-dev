@@ -2056,8 +2056,7 @@
   "tags": [
     "bind",
     "dns",
-    "bind-exporter",
-    "prometheus"
+    "bind-exporter"
   ],
   "templating": {
     "list": [
@@ -2189,7 +2188,7 @@
     ]
   },
   "timezone": "browser",
-  "title": "Bind9 Exporter DNS",
+  "title": "Bind9",
   "uid": "bind9-exporter",
   "version": 17,
   "weekStart": ""

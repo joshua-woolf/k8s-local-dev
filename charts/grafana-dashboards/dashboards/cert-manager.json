@@ -1443,7 +1443,10 @@
     }
   ],
   "schemaVersion": 40,
-  "tags": [],
+  "tags": [
+    "cert-manager",
+    "tls"
+  ],
   "templating": {
     "list": [
       {
@@ -1483,7 +1486,7 @@
         "current": {},
         "datasource": {
           "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
+          "uid": "${datasource}"
         },
         "definition": "label_values(certmanager_certificate_expiration_timestamp_seconds{exported_namespace=\"$namespace\"},name)",
         "includeAll": true,
@@ -1506,7 +1509,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "cert-manager2",
+  "title": "Cert Manager",
   "uid": "ae2fsy6rir4zkf",
   "version": 12,
   "weekStart": "",
