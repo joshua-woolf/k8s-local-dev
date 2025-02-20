@@ -12,7 +12,6 @@ class RoutesController {
     const tracer = trace.getTracer('dashboard');
     const span = tracer.startSpan('get_routes', { parent: activeContext });
 
-    // Set the context with our new span as active for the duration of this function
     return context.with(trace.setSpan(activeContext, span), async () => {
       try {
         const [ingresses, ingressRoutes] = await Promise.all([

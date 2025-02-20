@@ -1,17 +1,3 @@
-// Types
-/**
- * @typedef {Object} Credentials
- * @property {string} username
- * @property {string} password
- */
-
-/**
- * @typedef {Object} Route
- * @property {string} name
- * @property {string[]} urls
- * @property {Credentials} [credentials]
- */
-
 class ThemeManager {
   constructor() {
     this.themeToggle = document.getElementById('theme-toggle');
@@ -21,10 +7,8 @@ class ThemeManager {
   }
 
   init() {
-    // Initial state is already set by the script in head
     this.updateThemeToggleIcons();
 
-    // Watch for system theme changes
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
       if (!localStorage.theme) {
         if (e.matches) {
@@ -36,7 +20,6 @@ class ThemeManager {
       }
     });
 
-    // Watch for theme changes
     const observer = new MutationObserver(() => {
       this.updateThemeToggleIcons();
     });
@@ -54,10 +37,6 @@ class ThemeManager {
 }
 
 class ClipboardManager {
-  /**
-   * @param {string} text
-   * @param {HTMLElement} button
-   */
   static async copyToClipboard(text, button) {
     try {
       await navigator.clipboard.writeText(text);
@@ -86,9 +65,7 @@ class RouteManager {
   init() {
     this.fetchRoutes();
     this.setupEventListeners();
-    // Focus the search input when the page loads
     this.searchInput.focus();
-    // Refresh every 30 seconds
     setInterval(() => this.fetchRoutes(), 30000);
   }
 
@@ -100,26 +77,8 @@ class RouteManager {
         this.refreshButton.classList.remove('animate-spin');
       });
     });
-
-    // Add keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-      // Ctrl/Cmd + K to focus search
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        this.searchInput.focus();
-      }
-      // Ctrl/Cmd + R to refresh
-      if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
-        e.preventDefault();
-        this.refreshButton.click();
-      }
-    });
   }
 
-  /**
-   * @param {Route} route
-   * @returns {string}
-   */
   createRouteCard(route) {
     return `
       <div class="route-card bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg p-6 transition-all duration-200">
@@ -138,10 +97,6 @@ class RouteManager {
     `;
   }
 
-  /**
-   * @param {string} url
-   * @returns {string}
-   */
   createUrlLink(url) {
     return `
       <div class="group">
@@ -160,10 +115,6 @@ class RouteManager {
     `;
   }
 
-  /**
-   * @param {Credentials} credentials
-   * @returns {string}
-   */
   createCredentialsSection(credentials) {
     if (!credentials) return '';
 
@@ -197,10 +148,6 @@ class RouteManager {
     `;
   }
 
-  /**
-   * @param {string} str
-   * @returns {string}
-   */
   escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
@@ -247,7 +194,6 @@ class RouteManager {
   }
 }
 
-// Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
   new ThemeManager();
   new RouteManager();
