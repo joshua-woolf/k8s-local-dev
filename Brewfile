@@ -1,6 +1,3 @@
-tap "fluxcd/tap"
-
-brew "fluxcd/tap/flux", version: "2.5.0"
 brew "git"
 brew "helm"
 brew "k9s"

@@ -102,9 +102,6 @@ declare -a IMAGES=(
   "docker.io/traefik:v2.11.2"
   "ghcr.io/fluxcd/flagger:1.40.0"
   "ghcr.io/fluxcd/flagger-loadtester:0.34.0"
-  "ghcr.io/fluxcd/helm-controller:v1.2.0"
-  "ghcr.io/fluxcd/kustomize-controller:v1.5.0"
-  "ghcr.io/fluxcd/source-controller:v1.5.0"
   "ghcr.io/kedacore/keda:2.16.1"
   "ghcr.io/kedacore/keda-metrics-apiserver:2.16.1"
   "ghcr.io/kedacore/keda-admission-webhooks:2.16.1"
@@ -149,8 +146,8 @@ mkdir -p "./temp"
 
 cat ./configs/cluster/kind-config.yaml | envsubst > "./temp/kind-config.yaml"
 
-if ! kind get clusters | grep -q "^kind$"; then
-  kind create cluster --config "./temp/kind-config.yaml"
+if ! kind get clusters | grep -q "^local-dev$"; then
+  kind create cluster --name local-dev --config "./temp/kind-config.yaml"
 else
   echo "Cluster 'kind' already exists, skipping creation"
 fi
@@ -160,16 +157,6 @@ for node in $(kind get nodes); do
     update-ca-certificates
   "
 done
-
-# Boostrap FluxCD
-flux bootstrap github \
-  --components source-controller,kustomize-controller,helm-controller \
-  --token-auth \
-  --owner=joshua-woolf \
-  --repository=k8s-lab \
-  --branch=main \
-  --registry=registry.local.dev:5001/ghcr.io/fluxcd \
-  --path=clusters/local-dev
 
 # Install Grafana dashboards
 helm upgrade grafana-dashboards ./charts/grafana-dashboards \

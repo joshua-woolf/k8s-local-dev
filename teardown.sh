@@ -17,7 +17,7 @@ get_active_service() {
 
 networksetup -setdnsservers "$(get_active_service)" "empty"
 
-kind delete cluster
+kind delete cluster --name local-dev
 
 if docker ps -f name=registry | grep -q registry; then
   docker rm -f registry

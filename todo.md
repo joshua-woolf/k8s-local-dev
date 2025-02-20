@@ -4,7 +4,6 @@ Make the repository presentable.
 
 Switch to using cloud-provider-kind to setup a load balancer rather than using node ports.
 
-Change entire setup to use flux for deployment.
 Convert script to powershell.
 
 Update things.
