@@ -7,21 +7,16 @@
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
   <title>Local Dev Dashboard</title>
-  <!-- Prevent flash of wrong theme -->
   <script>
-    // Ensure dark mode is applied immediately
     if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
 
-    // Add helper for theme changes
     window.toggleTheme = () => {
-      // Add class to prevent transitions during theme change
       document.documentElement.classList.add('changing-theme');
 
-      // Toggle theme
       if (document.documentElement.classList.contains('dark')) {
         document.documentElement.classList.remove('dark');
         localStorage.theme = 'light';
@@ -30,7 +25,6 @@
         localStorage.theme = 'dark';
       }
 
-      // Remove the class after a short delay
       requestAnimationFrame(() => {
         document.documentElement.classList.remove('changing-theme');
       });
