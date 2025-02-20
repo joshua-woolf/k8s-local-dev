@@ -51,13 +51,18 @@ main() {
   # Check if there are any DNS servers configured
   if [[ "${current_servers[*]}" == "There aren't any DNS Servers set on"* ]] || [[ "${current_servers[*]}" == "Empty"* ]]; then
     echo "No DNS servers currently configured. Setting 127.0.0.1 as primary DNS server."
-    set_dns_servers "$active_service" "127.0.0.1" "8.8.8.8" "8.8.4.4"
+    set_dns_servers "$active_service" "127.0.0.1"
     exit 0
   fi
 
   # Check if 127.0.0.1 is already the first server
   if [[ "${current_servers[0]}" == "127.0.0.1" ]]; then
     echo "127.0.0.1 is already the first DNS server. No changes needed."
+
+    # Flush DNS Cache
+    sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+    echo "DNS cache flushed successfully"
+
     exit 0
   fi
 
@@ -72,6 +77,10 @@ main() {
   # Set the new DNS servers
   set_dns_servers "$active_service" "${new_servers[@]}"
   echo "DNS servers updated successfully"
+
+  # Flush DNS Cache
+  sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+  echo "DNS cache flushed successfully"
 }
 
 # Run main function with sudo privileges

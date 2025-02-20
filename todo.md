@@ -1,4 +1,4 @@
-Debug the host DNS configuration.
+Configure the bind9 dns fallback to use the dhcp assigned dns servers.
 
 Add dashboards to Grafana for flagger and load tester.
 Refine dashboards.

@@ -2,8 +2,6 @@
 
 set -e
 
-./scripts/configure-local-dns.sh
-
 mkdir -p "./temp"
 
 # Helm Repos
@@ -366,8 +364,7 @@ helm upgrade keda keda/keda \
   --version 2.16.1 \
   --wait
 
-# Flush DNS Cache
-sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+./scripts/configure-local-dns.sh
 
 # Dashboard
 if [ ! -f "./temp/dashboard_version" ]; then
