@@ -149,7 +149,7 @@ cat ./configs/cluster/kind-config.yaml | envsubst > "./temp/kind-config.yaml"
 
 if ! kind get clusters | grep -q "^local-dev$"; then
   kind create cluster --name local-dev --config "./temp/kind-config.yaml"
-  for node in $(kind get nodes); do
+  for node in $(kind get nodes --name local-dev); do
     docker exec "$node" bash -c "
       update-ca-certificates
     "
@@ -364,7 +364,20 @@ helm upgrade keda keda/keda \
   --version 2.16.1 \
   --wait
 
-./scripts/configure-local-dns.sh
+## Update DNS Server
+for service in $(networksetup -listallnetworkservices | tail -n +2); do
+  if [[ $(networksetup -getinfo "$service" | grep "IP address" | grep -v "none") ]]; then
+    active_service="$service"
+    break
+  fi
+done
+
+echo "Updating DNS Server for Network $active_service to 127.0.0.1..."
+sudo networksetup -setdnsservers "$active_service" "127.0.0.1"
+
+# Flush DNS Cache
+sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+echo "DNS cache flushed successfully"
 
 # Dashboard
 if [ ! -f "./temp/dashboard_version" ]; then
