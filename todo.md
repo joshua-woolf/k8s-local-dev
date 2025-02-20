@@ -1,13 +1,12 @@
+
 Make the repository presentable.
 - update readme
-  - description, purpose
   - architecture diagram
-  - prereqs
-  - quick start
-  - configuration
-  - troubleshooting
 - update contributing
 - linting rules for dashboard
+- clean up cursor rules
+- vscode setup
+- rename repo
 
 Add dashboards to Grafana for flagger and load tester.
 

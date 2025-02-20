@@ -376,7 +376,8 @@ echo "Updating DNS Server for Network $active_service to 127.0.0.1..."
 sudo networksetup -setdnsservers "$active_service" "127.0.0.1"
 
 # Flush DNS Cache
-sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+sudo dscacheutil -flushcache
+sudo killall -HUP mDNSResponder
 echo "DNS cache flushed successfully"
 
 # Dashboard
@@ -404,4 +405,5 @@ helm upgrade dashboard ./charts/dashboard \
 
 echo "Dashboard is running on https://dashboard.local.dev"
 
+echo "Generating traffic to the dashboard for canary analysis..."
 hey -z 2m -q 100 -c 1 https://dashboard.local.dev
