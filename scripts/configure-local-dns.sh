@@ -52,6 +52,11 @@ main() {
   if [[ "${current_servers[*]}" == "There aren't any DNS Servers set on"* ]] || [[ "${current_servers[*]}" == "Empty"* ]]; then
     echo "No DNS servers currently configured. Setting 127.0.0.1 as primary DNS server."
     set_dns_servers "$active_service" "127.0.0.1"
+
+    # Flush DNS Cache
+    sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+    echo "DNS cache flushed successfully"
+
     exit 0
   fi
 
