@@ -22,6 +22,7 @@ helm repo update elastic flagger gatekeeper jetstack joxit keda metrics-server o
 mkdir -p "./temp/secrets"
 
 if [ ! -f "./temp/secrets/ca.key" ] || [ ! -f "./temp/secrets/ca.crt" ]; then
+  echo "Generating Root CA..."
   openssl genrsa -out "./temp/secrets/ca.key" 4096
   openssl req -x509 -new -nodes -key "./temp/secrets/ca.key" -sha256 -days 3650 -out "./temp/secrets/ca.crt" \
     -subj "/CN=Local Dev Root CA/O=Local Development/C=US"
@@ -67,7 +68,7 @@ openssl x509 -req \
 mkdir -p "./temp/registry-cache"
 
 if docker ps -f name=registry | grep -q registry; then
-  echo "Registry container already running"
+  echo "Registry Container Already Running..."
 else
   docker run -d --restart=always \
     -v ./temp/secrets:/certs \
@@ -132,7 +133,7 @@ declare -a IMAGES=(
 for source_image in "${IMAGES[@]}"; do
   target_image="$LOCAL_REGISTRY/$source_image"
   if ! curl -s -f -H "Accept: application/vnd.oci.image.manifest.v1+json" -H "Accept: application/vnd.oci.image.manifest.v2+json" "https://$LOCAL_REGISTRY/v2/${source_image%:*}/manifests/${source_image#*:}" >/dev/null 2>&1; then
-    echo "Processing image: $source_image"
+    echo "Importing Image to Local Registry: $source_image"
 
     docker pull "$source_image"
     docker run --rm -v "/var/run/docker.sock:/var/run/docker.sock" -v "$HOME/Library/Caches:/root/.cache/" ghcr.io/aquasecurity/trivy:0.59.0 image "$source_image"
@@ -148,15 +149,14 @@ cat ./configs/cluster/kind-config.yaml | envsubst > "./temp/kind-config.yaml"
 
 if ! kind get clusters | grep -q "^local-dev$"; then
   kind create cluster --name local-dev --config "./temp/kind-config.yaml"
+  for node in $(kind get nodes); do
+    docker exec "$node" bash -c "
+      update-ca-certificates
+    "
+  done
 else
-  echo "Cluster 'kind' already exists, skipping creation"
+  echo "Cluster Already Created..."
 fi
-
-for node in $(kind get nodes); do
-  docker exec "$node" bash -c "
-    update-ca-certificates
-  "
-done
 
 # Install Grafana dashboards
 helm upgrade grafana-dashboards ./charts/grafana-dashboards \
