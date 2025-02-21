@@ -130,13 +130,21 @@ declare -a IMAGES=(
   "ubuntu/bind9:9.18-22.04_beta"
 )
 
+mkdir -p "./logs/trivy"
+
 for source_image in "${IMAGES[@]}"; do
   target_image="$LOCAL_REGISTRY/$source_image"
   if ! curl -s -f -H "Accept: application/vnd.oci.image.manifest.v1+json" -H "Accept: application/vnd.oci.image.manifest.v2+json" "https://$LOCAL_REGISTRY/v2/${source_image%:*}/manifests/${source_image#*:}" >/dev/null 2>&1; then
     echo "Importing Image to Local Registry: $source_image"
 
     docker pull "$source_image"
-    docker run --rm -v "/var/run/docker.sock:/var/run/docker.sock" -v "$HOME/Library/Caches:/root/.cache/" ghcr.io/aquasecurity/trivy:0.59.0 image "$source_image"
+    image_name_safe=$(echo "$source_image" | sed 's/[\/:]/_/g')
+    docker run --rm \
+      -v "/var/run/docker.sock:/var/run/docker.sock" \
+      -v "$HOME/Library/Caches:/root/.cache/" \
+      -v "$(pwd)/logs/trivy:/logs" \
+      ghcr.io/aquasecurity/trivy:0.59.0 \
+      image "$source_image" > "./logs/trivy/${image_name_safe}.log"
     docker tag "$source_image" "$target_image"
     docker push "$target_image"
   fi
@@ -390,8 +398,21 @@ echo "$DASHBOARD_VERSION" > "./temp/dashboard_version"
 
 docker build -t "registry.local.dev:5001/dashboard:v${DASHBOARD_VERSION}" ./src/dashboard -f ./src/dashboard/server.Dockerfile
 docker build -t "registry.local.dev:5001/dashboard-tests:v${DASHBOARD_VERSION}" ./src/dashboard -f ./src/dashboard/tests.Dockerfile
-docker run --rm -v "/var/run/docker.sock:/var/run/docker.sock" -v "$HOME/Library/Caches:/root/.cache/" ghcr.io/aquasecurity/trivy:0.59.0 image "registry.local.dev:5001/dashboard:v${DASHBOARD_VERSION}"
-docker run --rm -v "/var/run/docker.sock:/var/run/docker.sock" -v "$HOME/Library/Caches:/root/.cache/" ghcr.io/aquasecurity/trivy:0.59.0 image "registry.local.dev:5001/dashboard-tests:v${DASHBOARD_VERSION}"
+
+docker run --rm \
+  -v "/var/run/docker.sock:/var/run/docker.sock" \
+  -v "$HOME/Library/Caches:/root/.cache/" \
+  -v "$(pwd)/logs/trivy:/logs" \
+  ghcr.io/aquasecurity/trivy:0.59.0 \
+  image "registry.local.dev:5001/dashboard:v${DASHBOARD_VERSION}" > "./logs/trivy/registry.local.dev_5001_dashboard_v${DASHBOARD_VERSION}.log"
+
+docker run --rm \
+  -v "/var/run/docker.sock:/var/run/docker.sock" \
+  -v "$HOME/Library/Caches:/root/.cache/" \
+  -v "$(pwd)/logs/trivy:/logs" \
+  ghcr.io/aquasecurity/trivy:0.59.0 \
+  image "registry.local.dev:5001/dashboard-tests:v${DASHBOARD_VERSION}" > "./logs/trivy/registry.local.dev_5001_dashboard-tests_v${DASHBOARD_VERSION}.log"
+
 docker push "registry.local.dev:5001/dashboard:v${DASHBOARD_VERSION}"
 docker push "registry.local.dev:5001/dashboard-tests:v${DASHBOARD_VERSION}"
 
