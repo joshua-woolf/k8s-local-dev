@@ -1,82 +1,85 @@
 class ThemeManager {
   constructor() {
-    this.themeToggle = document.getElementById('theme-toggle');
-    this.darkIcon = document.getElementById('theme-toggle-dark-icon');
-    this.lightIcon = document.getElementById('theme-toggle-light-icon');
-    this.init();
+    this.themeToggle = document.getElementById('theme-toggle')
+    this.darkIcon = document.getElementById('theme-toggle-dark-icon')
+    this.lightIcon = document.getElementById('theme-toggle-light-icon')
+    this.init()
   }
 
   init() {
-    this.updateThemeToggleIcons();
+    this.updateThemeToggleIcons()
 
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
       if (!localStorage.theme) {
         if (e.matches) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('dark')
         }
-        this.updateThemeToggleIcons();
+        else {
+          document.documentElement.classList.remove('dark')
+        }
+        this.updateThemeToggleIcons()
       }
-    });
+    })
 
     const observer = new MutationObserver(() => {
-      this.updateThemeToggleIcons();
-    });
+      this.updateThemeToggleIcons()
+    })
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class']
-    });
+      attributeFilter: ['class'],
+    })
   }
 
   updateThemeToggleIcons() {
-    const isDark = document.documentElement.classList.contains('dark');
-    this.darkIcon.classList.toggle('hidden', isDark);
-    this.lightIcon.classList.toggle('hidden', !isDark);
+    const isDark = document.documentElement.classList.contains('dark')
+    this.darkIcon.classList.toggle('hidden', isDark)
+    this.lightIcon.classList.toggle('hidden', !isDark)
   }
 }
 
+// eslint-disable-next-line no-unused-vars
 class ClipboardManager {
   static async copyToClipboard(text, button) {
     try {
-      await navigator.clipboard.writeText(text);
-      button.classList.add('text-green-500', 'dark:text-green-400', 'scale-110');
+      await navigator.clipboard.writeText(text)
+      button.classList.add('text-green-500', 'dark:text-green-400', 'scale-110')
       setTimeout(() => {
-        button.classList.remove('text-green-500', 'dark:text-green-400', 'scale-110');
-      }, 300);
-    } catch (err) {
-      console.error('Failed to copy text:', err);
+        button.classList.remove('text-green-500', 'dark:text-green-400', 'scale-110')
+      }, 300)
+    }
+    catch (err) {
+      console.error('Failed to copy text:', err)
     }
   }
 }
 
 class RouteManager {
   constructor() {
-    this.routesContainer = document.getElementById('routes-container');
-    this.loading = document.getElementById('loading');
-    this.error = document.getElementById('error');
-    this.noResults = document.getElementById('no-results');
-    this.searchInput = document.getElementById('route-search');
-    this.refreshButton = document.getElementById('refresh-button');
-    this.routes = [];
-    this.init();
+    this.routesContainer = document.getElementById('routes-container')
+    this.loading = document.getElementById('loading')
+    this.error = document.getElementById('error')
+    this.noResults = document.getElementById('no-results')
+    this.searchInput = document.getElementById('route-search')
+    this.refreshButton = document.getElementById('refresh-button')
+    this.routes = []
+    this.init()
   }
 
   init() {
-    this.fetchRoutes();
-    this.setupEventListeners();
-    this.searchInput.focus();
-    setInterval(() => this.fetchRoutes(), 30000);
+    this.fetchRoutes()
+    this.setupEventListeners()
+    this.searchInput.focus()
+    setInterval(() => this.fetchRoutes(), 30000)
   }
 
   setupEventListeners() {
-    this.searchInput.addEventListener('input', () => this.filterRoutes());
+    this.searchInput.addEventListener('input', () => this.filterRoutes())
     this.refreshButton.addEventListener('click', () => {
-      this.refreshButton.classList.add('animate-spin');
+      this.refreshButton.classList.add('animate-spin')
       this.fetchRoutes().finally(() => {
-        this.refreshButton.classList.remove('animate-spin');
-      });
-    });
+        this.refreshButton.classList.remove('animate-spin')
+      })
+    })
   }
 
   createRouteCard(route) {
@@ -94,7 +97,7 @@ class RouteManager {
           ${this.createCredentialsSection(route.credentials)}
         </div>
       </div>
-    `;
+    `
   }
 
   createUrlLink(url) {
@@ -112,11 +115,11 @@ class RouteManager {
           </div>
         </a>
       </div>
-    `;
+    `
   }
 
   createCredentialsSection(credentials) {
-    if (!credentials) return '';
+    if (!credentials) return ''
 
     return `
       <div class="mt-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -145,56 +148,57 @@ class RouteManager {
           </div>
         </div>
       </div>
-    `;
+    `
   }
 
   escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+    const div = document.createElement('div')
+    div.textContent = str
+    return div.innerHTML
   }
 
   filterRoutes() {
-    const query = this.searchInput.value.toLowerCase();
-    const filteredRoutes = this.routes.filter(route => {
-      return route.name.toLowerCase().includes(query) ||
-             route.urls.some(url => url.toLowerCase().includes(query));
-    });
+    const query = this.searchInput.value.toLowerCase()
+    const filteredRoutes = this.routes.filter((route) => {
+      return route.name.toLowerCase().includes(query)
+        || route.urls.some(url => url.toLowerCase().includes(query))
+    })
 
     this.routesContainer.innerHTML = filteredRoutes
       .sort((a, b) => a.name.localeCompare(b.name))
       .map(route => this.createRouteCard(route))
-      .join('');
+      .join('')
 
-    this.noResults.classList.toggle('hidden', filteredRoutes.length > 0);
-    this.routesContainer.classList.toggle('hidden', filteredRoutes.length === 0);
+    this.noResults.classList.toggle('hidden', filteredRoutes.length > 0)
+    this.routesContainer.classList.toggle('hidden', filteredRoutes.length === 0)
   }
 
   async fetchRoutes() {
-    this.loading.style.display = 'block';
-    this.error.classList.add('hidden');
-    this.routesContainer.classList.add('hidden');
-    this.noResults.classList.add('hidden');
+    this.loading.style.display = 'block'
+    this.error.classList.add('hidden')
+    this.routesContainer.classList.add('hidden')
+    this.noResults.classList.add('hidden')
 
     try {
-      const response = await fetch('/api/routes');
+      const response = await fetch('/api/routes')
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
-      this.routes = await response.json();
+      this.routes = await response.json()
 
-      this.loading.style.display = 'none';
-      this.routesContainer.classList.remove('hidden');
-      this.filterRoutes();
-    } catch (error) {
-      this.loading.style.display = 'none';
-      this.error.classList.remove('hidden');
-      console.error('Error:', error);
+      this.loading.style.display = 'none'
+      this.routesContainer.classList.remove('hidden')
+      this.filterRoutes()
+    }
+    catch (error) {
+      this.loading.style.display = 'none'
+      this.error.classList.remove('hidden')
+      console.error('Error:', error)
     }
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  new ThemeManager();
-  new RouteManager();
-});
+  new ThemeManager()
+  new RouteManager()
+})

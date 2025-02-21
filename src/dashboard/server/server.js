@@ -1,81 +1,124 @@
-const { setupTelemetry } = require('./tracing');
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const { routesController } = require('./controllers/routes');
-const { errorHandler } = require('./middleware/errorHandler');
-const { requestLogger } = require('./middleware/requestLogger');
+import { setupTelemetry } from './tracing.js'
+import express from 'express'
+import cors from 'cors'
+import path, { dirname } from 'path'
+import { fileURLToPath } from 'url'
+import { routesController } from './controllers/routes.js'
+import { errorHandler } from './middleware/errorHandler.js'
+import { requestLogger } from './middleware/requestLogger.js'
+import { trace, SpanStatusCode } from '@opentelemetry/api'
 
-setupTelemetry();
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+setupTelemetry()
 
 class DashboardServer {
   constructor() {
-    this.app = express();
-    this.port = process.env.PORT || 3000;
-    this.setupMiddleware();
-    this.setupRoutes();
-    this.setupErrorHandling();
+    this.app = express()
+    this.port = process.env.PORT || 3000
+    this.setupMiddleware()
+    this.setupRoutes()
+    this.setupErrorHandling()
   }
 
   setupMiddleware() {
     this.app.use(cors({
       origin: process.env.CORS_ORIGIN || '*',
       methods: ['GET', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization']
-    }));
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    }))
 
-    this.app.use(express.static(path.join(__dirname, 'public')));
+    this.app.use(express.static(path.join(__dirname, 'public')))
 
-    this.app.use(requestLogger);
+    this.app.use(requestLogger)
   }
 
   setupRoutes() {
-    this.app.get('/api/routes', routesController);
+    this.app.get('/api/routes', routesController)
 
-    this.app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, 'public', 'index.html'));
-    });
+    this.app.get('*', (_req, res) => {
+      res.sendFile(path.join(__dirname, 'public', 'index.html'))
+    })
   }
 
   setupErrorHandling() {
-    this.app.use(errorHandler);
+    this.app.use(errorHandler)
   }
 
   start() {
     return new Promise((resolve, reject) => {
       try {
-        const server = this.app.listen(this.port, () => {
-          console.log(`Server running on port ${this.port}`);
-          resolve(server);
-        });
+        const tracer = trace.getTracer('dashboard')
+        const span = tracer.startSpan('server_start')
 
-        process.on('SIGTERM', () => this.shutdown(server));
-        process.on('SIGINT', () => this.shutdown(server));
-      } catch (error) {
-        reject(error);
+        const server = this.app.listen(this.port, () => {
+          span.setAttribute('port', this.port)
+          span.addEvent('server_started', {
+            attributes: {
+              port: this.port,
+            },
+          })
+          span.setStatus({ code: SpanStatusCode.OK })
+          span.end()
+          resolve(server)
+        })
+
+        process.on('SIGTERM', () => this.shutdown(server))
+        process.on('SIGINT', () => this.shutdown(server))
       }
-    });
+      catch (error) {
+        reject(error)
+      }
+    })
   }
 
   async shutdown(server) {
-    console.log('Shutting down server...');
+    const tracer = trace.getTracer('dashboard')
+    const span = tracer.startSpan('server_shutdown')
+
     try {
-      await new Promise((resolve) => server.close(resolve));
-      console.log('Server shutdown complete');
-      process.exit(0);
-    } catch (error) {
-      console.error('Error during shutdown:', error);
-      process.exit(1);
+      span.addEvent('shutting_down_server')
+      await new Promise(resolve => server.close(resolve))
+      span.addEvent('server_shutdown_complete')
+      span.setStatus({ code: SpanStatusCode.OK })
+      span.end()
+      process.exit(0)
+    }
+    catch (error) {
+      span.addEvent('server_shutdown_error', {
+        attributes: {
+          error: error.message,
+          stack: error.stack,
+        },
+      })
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message,
+      })
+      span.end()
+      process.exit(1)
     }
   }
 }
 
-if (require.main === module) {
-  const server = new DashboardServer();
-  server.start().catch(error => {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  });
-}
+const server = new DashboardServer()
 
-module.exports = { DashboardServer };
+server.start().catch((error) => {
+  const tracer = trace.getTracer('dashboard')
+  const span = tracer.startSpan('server_start_error')
+  span.addEvent('failed_to_start_server', {
+    attributes: {
+      error: error.message,
+      stack: error.stack,
+    },
+  })
+  span.setStatus({
+    code: SpanStatusCode.ERROR,
+    message: error.message,
+  })
+  span.end()
+  process.exit(1)
+})
+
+export { DashboardServer }
