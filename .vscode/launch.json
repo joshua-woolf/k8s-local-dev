@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Setup",
+      "type": "f5anything",
+      "request": "launch",
+      "command": "./setup.sh",
+    },
+    {
+      "name": "Teardown",
+      "type": "f5anything",
+      "request": "launch",
+      "command": "./teardown.sh",
+    }
+  ]
+}
