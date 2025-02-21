@@ -403,7 +403,7 @@ helm upgrade dashboard ./charts/dashboard \
   --set "imageTag=v${DASHBOARD_VERSION}" \
   --wait
 
-echo "Dashboard is running on https://dashboard.local.dev"
+echo "\e[32mDashboard is running on https://dashboard.local.dev\e[0m"
 
 echo "Generating traffic to the dashboard for canary analysis..."
 hey -z 2m -q 100 -c 1 https://dashboard.local.dev
