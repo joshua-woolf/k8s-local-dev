@@ -3,7 +3,6 @@ import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentation
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto'
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto'
 import { Resource } from '@opentelemetry/resources'
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express'
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
 import { trace, SpanStatusCode } from '@opentelemetry/api'
@@ -16,9 +15,9 @@ function setupTelemetry() {
     span.addEvent('initializing_opentelemetry')
 
     const resource = new Resource({
-      [SemanticResourceAttributes.SERVICE_NAME]: 'dashboard',
-      [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
-      [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]: process.env.NODE_ENV || 'development',
+      [ResourceAttributes.SERVICE_NAME]: 'dashboard',
+      [ResourceAttributes.SERVICE_VERSION]: '1.0.0',
+      [ResourceAttributes.DEPLOYMENT_ENVIRONMENT]: process.env.NODE_ENV || 'development',
     })
 
     const commonExporterConfig = {
