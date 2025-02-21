@@ -77,3 +77,7 @@ There is sometimes an issue where the DNS cache on the host machine needs to be 
 sudo dscacheutil -flushcache
 sudo killall -HUP mDNSResponder
 ```
+
+## Contributing
+
+Since this is a hobby project, it won't be actively maintained. However, if you have any suggestions or feedback, please feel free to open an issue or submit a pull request.
