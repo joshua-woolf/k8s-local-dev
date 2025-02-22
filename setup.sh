@@ -18,6 +18,23 @@ helm repo add traefik https://traefik.github.io/charts
 
 helm repo update elastic flagger gatekeeper jetstack joxit keda metrics-server open-telemetry prometheus-community traefik
 
+# Scan all Helm charts
+mkdir -p "./logs/trivy/helm-charts"
+
+declare -a LOCAL_CHARTS=($(ls -d charts/* | cut -d'/' -f2 | sort))
+
+for chart in "${LOCAL_CHARTS[@]}"; do
+  echo "Scanning Helm chart: $chart"
+
+  docker run --rm \
+    -v "/var/run/docker.sock:/var/run/docker.sock" \
+    -v "$HOME/Library/Caches:/root/.cache/" \
+    -v "$(pwd):/workspace" \
+    -w /workspace \
+    ghcr.io/aquasecurity/trivy:0.59.0 \
+    config "/workspace/charts/${chart}" > "./logs/trivy/helm-charts/${chart}.log"
+done
+
 # Trusted Root CA Certificate
 mkdir -p "./temp/secrets"
 
@@ -130,7 +147,7 @@ declare -a IMAGES=(
   "ubuntu/bind9:9.18-22.04_beta"
 )
 
-mkdir -p "./logs/trivy"
+mkdir -p "./logs/trivy/container-images"
 
 for source_image in "${IMAGES[@]}"; do
   target_image="$LOCAL_REGISTRY/$source_image"
@@ -142,9 +159,9 @@ for source_image in "${IMAGES[@]}"; do
     docker run --rm \
       -v "/var/run/docker.sock:/var/run/docker.sock" \
       -v "$HOME/Library/Caches:/root/.cache/" \
-      -v "$(pwd)/logs/trivy:/logs" \
+      -v "$(pwd)/logs/trivy/container-images:/logs" \
       ghcr.io/aquasecurity/trivy:0.59.0 \
-      image "$source_image" > "./logs/trivy/${image_name_safe}.log"
+      image "$source_image" > "./logs/trivy/container-images/${image_name_safe}.log"
     docker tag "$source_image" "$target_image"
     docker push "$target_image"
   fi
@@ -402,14 +419,14 @@ docker build -t "registry.local.dev:5001/dashboard-tests:v${DASHBOARD_VERSION}" 
 docker run --rm \
   -v "/var/run/docker.sock:/var/run/docker.sock" \
   -v "$HOME/Library/Caches:/root/.cache/" \
-  -v "$(pwd)/logs/trivy:/logs" \
+  -v "$(pwd)/logs/trivy/container-images:/logs" \
   ghcr.io/aquasecurity/trivy:0.59.0 \
-  image "registry.local.dev:5001/dashboard:v${DASHBOARD_VERSION}" > "./logs/trivy/registry.local.dev_5001_dashboard_v${DASHBOARD_VERSION}.log"
+  image "registry.local.dev:5001/dashboard:v${DASHBOARD_VERSION}" > "./logs/trivy/container-images/registry.local.dev_5001_dashboard_v${DASHBOARD_VERSION}.log"
 
 docker run --rm \
   -v "/var/run/docker.sock:/var/run/docker.sock" \
   -v "$HOME/Library/Caches:/root/.cache/" \
-  -v "$(pwd)/logs/trivy:/logs" \
+  -v "$(pwd)/logs/trivy/container-images:/logs" \
   ghcr.io/aquasecurity/trivy:0.59.0 \
   image "registry.local.dev:5001/dashboard-tests:v${DASHBOARD_VERSION}" > "./logs/trivy/registry.local.dev_5001_dashboard-tests_v${DASHBOARD_VERSION}.log"
 
