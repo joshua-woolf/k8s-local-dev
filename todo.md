@@ -1,2 +1,2 @@
 Update things.
-Fix helm chart issues.
+Add .trivyignore file.

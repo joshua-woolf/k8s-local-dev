@@ -47,6 +47,12 @@ spec:
             periodSeconds: 10
             tcpSocket:
               port: 53
+          securityContext:
+            capabilities:
+              add:
+                - NET_BIND_SERVICE
+              drop:
+                - ALL
           volumeMounts:
             - mountPath: /etc/bind/named.conf.options
               name: config
@@ -59,6 +65,8 @@ spec:
               subPath: local.dev.zone
             - mountPath: /var/log/named
               name: bind-logs
+            - mountPath: /var/run/named
+              name: bind-run
         - args:
             - --bind.stats-groups=server,view
             - --bind.stats-url=http://localhost:8053/
@@ -69,9 +77,24 @@ spec:
           ports:
             - containerPort: 9119
               name: metrics
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 10002
+            runAsNonRoot: true
+            runAsUser: 10002
+      securityContext:
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       volumes:
         - configMap:
             name: bind9
           name: config
         - emptyDir: {}
           name: bind-logs
+        - emptyDir: {}
+          name: bind-run
