@@ -1,0 +1,17 @@
+# These are required to run the bind9 service and this is not intended to run in a production environment.
+AVD-KSV-0001 # (MEDIUM): Container 'bind9' of Deployment 'bind9' should set 'securityContext.allowPrivilegeEscalation' to false
+AVD-KSV-0012 # (MEDIUM): Container 'bind9' of Deployment 'bind9' should set 'securityContext.runAsNonRoot' to true
+AVD-KSV-0014 # (HIGH): Container 'bind9' of Deployment 'bind9' should set 'securityContext.readOnlyRootFilesystem' to true
+AVD-KSV-0020 # (LOW): Container 'bind9' of Deployment 'bind9' should set 'securityContext.runAsUser' > 10000
+AVD-KSV-0021 # (LOW): Container 'bind9' of Deployment 'bind9' should set 'securityContext.runAsGroup' > 10000
+AVD-KSV-0022 # (MEDIUM): Container 'bind9' of Deployment 'bind9' should not set 'securityContext.capabilities.add'
+AVD-KSV-0117 # (MEDIUM): deployment bind9 in default namespace should not set spec.template.spec.containers.ports.containerPort to less than 1024
+
+# These will be addressed at a later stage.
+AVD-KSV-0011 # (LOW): Container 'bind9' of Deployment 'bind9' should set 'resources.limits.cpu'
+AVD-KSV-0015 # (LOW): Container 'bind9' of Deployment 'bind9' should set 'resources.requests.cpu'
+AVD-KSV-0016 # (LOW): Container 'bind9' of Deployment 'bind9' should set 'resources.requests.memory'
+AVD-KSV-0018 # (LOW): Container 'bind9' of Deployment 'bind9' should set 'resources.limits.memory'
+
+# This seems to be a false positive since the image tag is defined as a specific version.
+AVD-KSV-0013 # (MEDIUM): Container 'bind-exporter' of Deployment 'bind9' should specify an image tag

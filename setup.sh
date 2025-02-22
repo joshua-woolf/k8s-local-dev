@@ -35,7 +35,7 @@ for chart in "${LOCAL_CHARTS[@]}"; do
     -v "$(pwd):/workspace" \
     -w /workspace \
     ghcr.io/aquasecurity/trivy:0.59.0 \
-    config "/workspace/charts/${chart}" > "./logs/trivy/helm-charts/${chart}.log"
+    config --ignorefile "/workspace/charts/${chart}/.trivyignore" "/workspace/charts/${chart}" > "./logs/trivy/helm-charts/${chart}.log"
 done
 
 # Trusted Root CA Certificate

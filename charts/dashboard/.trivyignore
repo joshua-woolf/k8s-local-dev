@@ -1,0 +1,11 @@
+# This is needed by the application to find the passwords it displays on the dashboard and this is not intended to run in a production environment.
+AVD-KSV-0041 # (CRITICAL): ClusterRole 'dashboard' shouldn't have access to manage resource 'secrets'
+
+# These will be addressed at a later stage.
+AVD-KSV-0011 # (LOW): Container 'dashboard' of Deployment 'dashboard' should set 'resources.limits.cpu'
+AVD-KSV-0015 # (LOW): Container 'dashboard' of Deployment 'dashboard' should set 'resources.requests.cpu'
+AVD-KSV-0016 # (LOW): Container 'dashboard' of Deployment 'dashboard' should set 'resources.requests.memory'
+AVD-KSV-0018 # (LOW): Container 'dashboard' of Deployment 'dashboard' should set 'resources.limits.memory'
+
+# This seems to be a false positive since the image tag is defined as a specific version.
+AVD-KSV-0013 # (MEDIUM): Container 'dashboard' of Deployment 'dashboard' should specify an image tag
