@@ -9,7 +9,7 @@ rm -f "./temp/dashboard_version"
 services=$(networksetup -listallnetworkservices | tail -n +2)
 
 for service in $services; do
-  if [[ $(networksetup -getinfo "$service" | grep "IP address" | grep -v "none") ]]; then
+  if networksetup -getinfo "$service" | grep "IP address" | grep -qv "none"; then
     networksetup -setdnsservers "$service" "empty"
     break
   fi

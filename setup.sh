@@ -21,7 +21,10 @@ helm repo update elastic flagger gatekeeper jetstack joxit keda metrics-server o
 # Scan all Helm charts
 mkdir -p "./logs/trivy/helm-charts"
 
-declare -a LOCAL_CHARTS=($(ls -d charts/* | cut -d'/' -f2 | sort))
+LOCAL_CHARTS=()
+while IFS= read -r chart; do
+  LOCAL_CHARTS+=("$chart")
+done < <(find charts -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)
 
 for chart in "${LOCAL_CHARTS[@]}"; do
   echo "Scanning Helm chart: $chart"
@@ -170,7 +173,7 @@ done
 # Cluster
 mkdir -p "./temp"
 
-cat ./configs/cluster/kind-config.yaml | envsubst > "./temp/kind-config.yaml"
+envsubst < "./configs/cluster/kind-config.yaml" > "./temp/kind-config.yaml"
 
 if ! kind get clusters | grep -q "^local-dev$"; then
   kind create cluster --name local-dev --config "./temp/kind-config.yaml"
@@ -391,7 +394,7 @@ helm upgrade keda keda/keda \
 
 ## Update DNS Server
 for service in $(networksetup -listallnetworkservices | tail -n +2); do
-  if [[ $(networksetup -getinfo "$service" | grep "IP address" | grep -v "none") ]]; then
+  if networksetup -getinfo "$service" | grep "IP address" | grep -qv "none"; then
     active_service="$service"
     break
   fi
