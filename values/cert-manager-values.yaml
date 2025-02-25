@@ -1,16 +1,16 @@
 acmesolver:
   image:
     repository: registry.local.dev:5001/quay.io/jetstack/cert-manager-acmesolver
-    tag: v1.16.3
+    tag: v1.17.1
 cainjector:
   image:
     repository: registry.local.dev:5001/quay.io/jetstack/cert-manager-cainjector
-    tag: v1.16.3
+    tag: v1.17.1
 crds:
   enabled: true
 image:
   repository: registry.local.dev:5001/quay.io/jetstack/cert-manager-controller
-  tag: v1.16.3
+  tag: v1.17.1
 prometheus:
   servicemonitor:
     enabled: true
@@ -19,8 +19,8 @@ prometheus:
 startupapicheck:
   image:
     repository: registry.local.dev:5001/quay.io/jetstack/cert-manager-startupapicheck
-    tag: v1.16.3
+    tag: v1.17.1
 webhook:
   image:
     repository: registry.local.dev:5001/quay.io/jetstack/cert-manager-webhook
-    tag: v1.16.3
+    tag: v1.17.1

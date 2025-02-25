@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: eck-stack
     app.kubernetes.io/name: kibana
-    app.kubernetes.io/version: 8.17.0
+    app.kubernetes.io/version: {{ .Values.imageTag }}
   name: kibana
 spec:
   config:
@@ -60,5 +60,5 @@ spec:
     tls:
       selfSignedCertificate:
         disabled: true
-  image: registry.local.dev:5001/docker.elastic.co/kibana/kibana:8.17.0
-  version: 8.17.0
+  image: registry.local.dev:5001/docker.elastic.co/kibana/kibana:{{ .Values.imageTag }}
+  version: {{ .Values.imageTag }}

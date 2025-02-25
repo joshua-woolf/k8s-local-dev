@@ -4,10 +4,10 @@ metadata:
   labels:
     app.kubernetes.io/instance: eck-stack
     app.kubernetes.io/name: elasticsearch
-    app.kubernetes.io/version: 8.17.0
+    app.kubernetes.io/version: {{ .Values.imageTag }}
   name: elasticsearch
 spec:
-  image: registry.local.dev:5001/docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+  image: registry.local.dev:5001/docker.elastic.co/elasticsearch/elasticsearch:{{ .Values.imageTag }}
   http:
     tls:
       selfSignedCertificate:
@@ -37,4 +37,4 @@ spec:
               requests:
                 storage: 10Gi
             storageClassName: standard
-  version: 8.17.0
+  version: {{ .Values.imageTag }}

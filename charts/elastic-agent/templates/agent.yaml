@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: eck-stack
     app.kubernetes.io/name: elastic-agent
-    app.kubernetes.io/version: 8.17.0
+    app.kubernetes.io/version: {{ .Values.imageTag }}
   name: elastic-agent
 spec:
   daemonSet:
@@ -18,9 +18,9 @@ spec:
         serviceAccountName: elastic-agent
   fleetServerRef:
     name: fleet-server
-  image: registry.local.dev:5001/docker.elastic.co/beats/elastic-agent:8.17.0
+  image: registry.local.dev:5001/docker.elastic.co/beats/elastic-agent:{{ .Values.imageTag }}
   kibanaRef:
     name: kibana
   mode: fleet
   policyID: eck-agent
-  version: 8.17.0
+  version: {{ .Values.imageTag }}

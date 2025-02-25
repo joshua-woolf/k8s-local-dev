@@ -11,7 +11,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: eck-stack
     app.kubernetes.io/name: elasticsearch
-    app.kubernetes.io/version: 8.17.0
+    app.kubernetes.io/version: {{ .Values.imageTag }}
   name: elasticsearch
 spec:
   rules:

@@ -14,7 +14,7 @@ postInstall:
   probeWebhook:
     image:
       repository: registry.local.dev:5001/curlimages/curl
-      tag: 7.83.1
+      tag: 8.12.1
 postUpgrade:
   labelNamespace:
     image:

@@ -41,7 +41,7 @@ config:
           - otlp
 image:
   repository: registry.local.dev:5001/ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
-  tag: 0.118.0
+  tag: 0.120.0
 ingress:
   annotations:
     cert-manager.io/cluster-issuer: ca-issuer

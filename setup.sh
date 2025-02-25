@@ -111,14 +111,14 @@ fi
 LOCAL_REGISTRY="localhost:5001"
 
 declare -a IMAGES=(
-  "curlimages/curl:7.83.1"
+  "curlimages/curl:8.12.1"
   "docker.elastic.co/eck/eck-operator:2.16.1"
-  "docker.elastic.co/elasticsearch/elasticsearch:8.17.0"
-  "docker.elastic.co/kibana/kibana:8.17.0"
-  "docker.elastic.co/apm/apm-server:8.17.0"
-  "docker.elastic.co/beats/elastic-agent:8.17.0"
+  "docker.elastic.co/elasticsearch/elasticsearch:8.17.1"
+  "docker.elastic.co/kibana/kibana:8.17.1"
+  "docker.elastic.co/apm/apm-server:8.17.1"
+  "docker.elastic.co/beats/elastic-agent:8.17.1"
   "docker.io/busybox:1.37.0"
-  "docker.io/grafana/grafana:11.4.0"
+  "docker.io/grafana/grafana:11.5.1"
   "docker.io/library/busybox:1.31.1"
   "docker.io/traefik:v2.11.2"
   "ghcr.io/fluxcd/flagger:1.40.0"
@@ -126,26 +126,26 @@ declare -a IMAGES=(
   "ghcr.io/kedacore/keda:2.16.1"
   "ghcr.io/kedacore/keda-metrics-apiserver:2.16.1"
   "ghcr.io/kedacore/keda-admission-webhooks:2.16.1"
-  "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.118.0"
-  "joxit/docker-registry-ui:2.5.2"
+  "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.120.0"
+  "joxit/docker-registry-ui:2.5.7"
   "openpolicyagent/gatekeeper:v3.18.2"
   "openpolicyagent/gatekeeper-crds:v3.18.2"
-  "prometheuscommunity/bind-exporter:v0.6.0"
-  "quay.io/jetstack/cert-manager-acmesolver:v1.16.3"
-  "quay.io/jetstack/cert-manager-cainjector:v1.16.3"
-  "quay.io/jetstack/cert-manager-controller:v1.16.3"
-  "quay.io/jetstack/cert-manager-startupapicheck:v1.16.3"
-  "quay.io/jetstack/cert-manager-webhook:v1.16.3"
+  "prometheuscommunity/bind-exporter:v0.8.0"
+  "quay.io/jetstack/cert-manager-acmesolver:v1.17.1"
+  "quay.io/jetstack/cert-manager-cainjector:v1.17.1"
+  "quay.io/jetstack/cert-manager-controller:v1.17.1"
+  "quay.io/jetstack/cert-manager-startupapicheck:v1.17.1"
+  "quay.io/jetstack/cert-manager-webhook:v1.17.1"
   "quay.io/kiwigrid/k8s-sidecar:1.28.0"
   "quay.io/prometheus/alertmanager:v0.28.0"
-  "quay.io/prometheus/node-exporter:v1.8.2"
+  "quay.io/prometheus/node-exporter:v1.9.0"
   "quay.io/prometheus/prometheus:v3.1.0"
-  "quay.io/prometheus-operator/admission-webhook:v0.79.2"
-  "quay.io/prometheus-operator/prometheus-config-reloader:v0.79.2"
-  "quay.io/prometheus-operator/prometheus-operator:v0.79.2"
+  "quay.io/prometheus-operator/admission-webhook:v0.80.0"
+  "quay.io/prometheus-operator/prometheus-config-reloader:v0.80.0"
+  "quay.io/prometheus-operator/prometheus-operator:v0.80.0"
   "registry.k8s.io/external-dns/external-dns:v0.15.1"
   "registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.5.1"
-  "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.14.0"
+  "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.15.0"
   "registry.k8s.io/metrics-server/metrics-server:v0.7.2"
   "ubuntu/bind9:9.18-22.04_beta"
 )
@@ -208,7 +208,7 @@ helm upgrade kube-prometheus prometheus-community/kube-prometheus-stack \
   --namespace monitoring \
   --values "./values/prometheus-values.yaml" \
   --set "grafana.adminPassword=$GRAFANA_PASSWORD" \
-  --version 68.3.0 \
+  --version 69.4.1 \
   --wait
 
 # Metrics Server
@@ -238,7 +238,7 @@ helm upgrade cert-manager jetstack/cert-manager \
   --install \
   --namespace cert-manager \
   --values "./values/cert-manager-values.yaml" \
-  --version v1.16.3 \
+  --version v1.17.1 \
   --wait
 
 helm upgrade cluster-issuer ./charts/cluster-issuer \
@@ -324,7 +324,7 @@ helm upgrade otel-collector open-telemetry/opentelemetry-collector \
   --namespace monitoring \
   --values "./values/otel-collector-values.yaml" \
   --set config.exporters.otlp.headers.Authorization="Bearer ${ELASTIC_APM_SECRET_TOKEN}" \
-  --version 0.111.2 \
+  --version 0.117.0 \
   --wait
 
 # Traefik

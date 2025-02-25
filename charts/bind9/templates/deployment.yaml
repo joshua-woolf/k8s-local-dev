@@ -72,7 +72,7 @@ spec:
             - --bind.stats-url=http://localhost:8053/
             - --bind.timeout=20s
             - --web.listen-address=:9119
-          image: registry.local.dev:5001/prometheuscommunity/bind-exporter:v0.6.0
+          image: registry.local.dev:5001/prometheuscommunity/bind-exporter:v0.8.0
           name: bind-exporter
           ports:
             - containerPort: 9119

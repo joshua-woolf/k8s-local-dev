@@ -2,7 +2,7 @@ ui:
   catalogDefaultExpanded: true
   dockerRegistryUrl: https://registry.local.dev:5001
   deleteImages: true
-  image: registry.local.dev:5001/joxit/docker-registry-ui:2.5.2
+  image: registry.local.dev:5001/joxit/docker-registry-ui:2.5.7
   ingress:
     annotations:
       cert-manager.io/cluster-issuer: ca-issuer

@@ -37,7 +37,7 @@ grafana:
   image:
     registry: registry.local.dev:5001
     repository: docker.io/grafana/grafana
-    tag: 11.4.0
+    tag: 11.5.1
   ingress:
     annotations:
       cert-manager.io/cluster-issuer: ca-issuer
@@ -162,7 +162,7 @@ prometheus-node-exporter:
   image:
     registry: registry.local.dev:5001
     repository: quay.io/prometheus/node-exporter
-    tag: v1.8.2
+    tag: v1.9.0
   nodeSelector:
     kubernetes.io/os: linux
 prometheusOperator:
@@ -171,7 +171,7 @@ prometheusOperator:
       image:
         registry: registry.local.dev:5001
         repository: quay.io/prometheus-operator/admission-webhook
-        tag: v0.79.2
+        tag: v0.80.0
     patch:
       image:
         registry: registry.local.dev:5001
@@ -180,11 +180,11 @@ prometheusOperator:
   image:
     registry: registry.local.dev:5001
     repository: quay.io/prometheus-operator/prometheus-operator
-    tag: v0.79.2
+    tag: v0.80.0
   nodeSelector:
     kubernetes.io/os: linux
   prometheusConfigReloader:
     image:
       registry: registry.local.dev:5001
       repository: quay.io/prometheus-operator/prometheus-config-reloader
-      tag: v0.79.2
+      tag: v0.80.0
