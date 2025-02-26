@@ -23,6 +23,11 @@ if docker ps -f name=registry | grep -q registry; then
   docker rm -f registry
 fi
 
+# Delete Registry Network
+if docker network ls | grep -q kind; then
+  docker network rm kind
+fi
+
 # Delete Root CA
 if security find-certificate -c "Local Dev Root" /Library/Keychains/System.keychain >/dev/null 2>&1; then
   sudo security delete-certificate -c "Local Dev Root" /Library/Keychains/System.keychain

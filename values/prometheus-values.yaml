@@ -58,7 +58,7 @@ grafana:
     image:
       registry: registry.local.dev:5001
       repository: docker.io/library/busybox
-      tag: 1.31.1
+      tag: 1.37.0
   nodeSelector:
     kubernetes.io/os: linux
   persistence:

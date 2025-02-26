@@ -87,6 +87,10 @@ openssl x509 -req \
 # Container Registry
 mkdir -p "./temp/registry-cache"
 
+if ! docker network ls | grep -q kind; then
+  docker network create kind
+fi
+
 if docker ps -f name=registry | grep -q registry; then
   echo "Registry Container Already Running..."
 else
@@ -119,7 +123,7 @@ declare -a IMAGES=(
   "docker.elastic.co/beats/elastic-agent:8.17.1"
   "docker.io/busybox:1.37.0"
   "docker.io/grafana/grafana:11.5.1"
-  "docker.io/library/busybox:1.31.1"
+  "docker.io/library/busybox:1.37.0"
   "docker.io/traefik:v2.11.2"
   "ghcr.io/fluxcd/flagger:1.40.0"
   "ghcr.io/fluxcd/flagger-loadtester:0.34.0"
