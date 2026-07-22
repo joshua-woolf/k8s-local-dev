@@ -14,12 +14,14 @@ The core profile contains:
 - Grafana Alloy for pod logs, annotated Prometheus metrics, and OTLP
 - `grafana/otel-lgtm` with Grafana, Loki, Tempo, Prometheus, and Pyroscope
 - CloudNativePG with one PostgreSQL instance
+- pgAdmin with the local PostgreSQL connection preconfigured
 - The local service dashboard
 
 The full profile additionally contains:
 
 - A single-node ClickHouse StatefulSet
 - A single combined Strimzi KRaft controller/broker
+- Kafbat UI connected to the local Kafka broker
 - Gatekeeper with warning-only policies for application namespaces
 
 This is a disposable development environment. It is not a production topology:
@@ -35,14 +37,16 @@ changes to macOS network configuration:
 | --- | --- |
 | Dashboard | `https://dashboard.k8s.localhost` |
 | Grafana | `https://grafana.k8s.localhost` |
-| Kafka bootstrap | `kafka.k8s.localhost:9094` |
+| pgAdmin | `https://pgadmin.k8s.localhost` |
+| Kafbat UI | `https://kafbat.k8s.localhost` |
+| PostgreSQL | `postgres.k8s.localhost:5432` |
+| ClickHouse HTTP | `https://clickhouse.k8s.localhost` or `clickhouse.k8s.localhost:8123` |
+| ClickHouse native | `clickhouse.k8s.localhost:9000` |
+| Kafka | `kafka.k8s.localhost:9094` |
 
-Kind maps host ports `80` and `443` to fixed Traefik NodePorts. Kafka uses
-`9094` for bootstrap and advertises its single broker on `9095`. Every mapped
-port listens only on `127.0.0.1`.
-
-PostgreSQL and ClickHouse stay inside the cluster. Run `make ports` for their
-port-forward commands.
+Kind maps every listed port to a fixed Traefik NodePort. Traefik uses normal
+HTTP routing for the web applications and dedicated TCP entrypoints for each
+data protocol. Every mapped port listens only on `127.0.0.1`.
 
 ## Prerequisites
 
@@ -83,6 +87,16 @@ make up
 Open `https://dashboard.k8s.localhost`. Both setup commands are safe to rerun;
 they reconcile charts and manifests and reload the locally built dashboard.
 
+Kind host-port mappings are immutable. If you already have a cluster created by
+an older revision that did not expose the data ports, recreate it once:
+
+```sh
+make reset CONFIRM=1
+make up
+```
+
+This deletes every PVC in that local cluster.
+
 ## Commands
 
 | Command | Purpose |
@@ -94,7 +108,8 @@ they reconcile charts and manifests and reload the locally built dashboard.
 | `make up` | Reconcile the full profile |
 | `make dashboard` | Rebuild, load, and redeploy the dashboard |
 | `make load IMAGE=example/app:dev` | Load another local image into Kind |
-| `make ports` | Print data-service access commands |
+| `make ports` | Print data-service host endpoints |
+| `make credentials` | Print generated pgAdmin and database credentials |
 | `make status` | Show nodes, Helm releases, pods, and ingresses |
 | `make test` | Run dashboard lint and unit tests |
 | `make validate` | Render and schema-check every deployment input |
@@ -132,6 +147,10 @@ any site to a machine that trusts the CA.
 Node clients do not always consult the macOS trust store. For a Node process,
 set `NODE_EXTRA_CA_CERTS="$PWD/.state/mkcert/rootCA.pem"`.
 
+cert-manager certificates cover the HTTPS endpoints on port 443. The dedicated
+TCP entrypoints on 5432, 8123, 9000, and 9094 are passed through to their
+services and are not TLS-terminated by cert-manager. They remain loopback-only.
+
 ## Dashboard discovery
 
 The dashboard reads only Ingresses, Services, and EndpointSlices. Its service
@@ -167,17 +186,21 @@ registry certificate, mirror, or image-cache synchronization loop.
 
 ## Data services
 
-CloudNativePG generates the PostgreSQL application Secret. Retrieve connection
-details with normal kubectl access when needed:
+Display all generated local credentials:
 
 ```sh
-kubectl -n data get secret postgres-app
-kubectl -n data port-forward service/postgres-rw 5432:5432
+make credentials
 ```
 
-ClickHouse credentials are generated once into `data/clickhouse-credentials`.
-Kafka is reachable from the host at `kafka.k8s.localhost:9094`; the broker
-metadata endpoint is port `9095`.
+pgAdmin uses the generated login at `https://pgadmin.k8s.localhost`. The
+`Local PostgreSQL` server is preloaded with the `app` database and retrieves its
+password from CloudNativePG's `postgres-app` Secret. Kafbat requires no login in
+this loopback-only setup and connects to Kafka through the internal listener.
+
+PostgreSQL clients connect to `postgres.k8s.localhost:5432`. ClickHouse clients
+can use HTTPS on port 443, plain HTTP on 8123, or the native protocol on 9000.
+Kafka clients use `kafka.k8s.localhost:9094`; the single broker advertises that
+same endpoint.
 
 Deleting the Kind cluster deletes all PVC data. Keep schema migrations and seed
 steps reproducible rather than treating this cluster as a backup.
@@ -204,8 +227,8 @@ kubectl get certificate,certificaterequest -A
 kubectl get events -A --sort-by=.lastTimestamp
 ```
 
-If ports 80, 443, 9094, or 9095 are occupied, Kind cannot create the node.
-Stop the conflicting process before retrying.
+If ports 80, 443, 5432, 8123, 9000, or 9094 are occupied, Kind cannot create
+the node. Stop the conflicting process before retrying.
 
 If an older checkout of this repository is still running, use that checkout's
 legacy teardown before creating v2. The old setup changed the active network's

@@ -10,7 +10,7 @@ DASHBOARD_IMAGE ?= local/dashboard
 DASHBOARD_TAG ?= dev
 PLAYWRIGHT_CHANNEL ?= chrome
 
-.PHONY: help doctor cluster helm-core helm-full require-ca tls trust untrust core-resources full-resources dashboard-image dashboard up-core up status ports load test validate smoke reset
+.PHONY: help doctor cluster helm-core helm-full require-ca tls trust untrust core-resources full-resources dashboard-image dashboard up-core up status ports credentials load test validate smoke reset
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "; printf "Usage: make <target>\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -29,6 +29,18 @@ doctor: ## Check local prerequisites and Docker availability
 cluster: ## Create the Kind cluster if it does not exist
 	@if kind get clusters 2>/dev/null | grep -qx "$(CLUSTER_NAME)"; then \
 		echo "Kind cluster $(CLUSTER_NAME) already exists"; \
+		stale=0; \
+		for mapping in "30080 80" "30443 443" "30543 5432" "30123 8123" "30900 9000" "30094 9094"; do \
+			container_port="$${mapping%% *}"; \
+			host_port="$${mapping##* }"; \
+			if ! docker port "$(CLUSTER_NAME)-control-plane" "$${container_port}/tcp" 2>/dev/null | grep -Eq "127\\.0\\.0\\.1:$${host_port}$$"; then \
+				stale=1; \
+			fi; \
+		done; \
+		if test "$$stale" -ne 0; then \
+			echo "Kind host-port mappings are stale. Recreate with: make reset CONFIRM=1 && make up"; \
+			exit 1; \
+		fi; \
 	else \
 		kind create cluster --name "$(CLUSTER_NAME)" --config kind.yaml; \
 	fi
@@ -91,11 +103,21 @@ status: ## Show cluster nodes, releases, pods, and ingresses
 	@helm --kube-context "$(KUBE_CONTEXT)" list --all-namespaces
 	@kubectl --context "$(KUBE_CONTEXT)" get pods --all-namespaces
 	@kubectl --context "$(KUBE_CONTEXT)" get ingress --all-namespaces 2>/dev/null || true
+	@kubectl --context "$(KUBE_CONTEXT)" get ingressroutetcp --all-namespaces 2>/dev/null || true
 
 ports: ## Print host access details for data services
-	@echo "Postgres:   kubectl --context $(KUBE_CONTEXT) -n data port-forward service/postgres-rw 5432:5432"
-	@echo "ClickHouse: kubectl --context $(KUBE_CONTEXT) -n data port-forward service/clickhouse 8123:8123"
-	@echo "Kafka:      kafka.k8s.localhost:9094 (broker metadata uses port 9095)"
+	@echo "PostgreSQL:       postgres.k8s.localhost:5432"
+	@echo "ClickHouse HTTP:  https://clickhouse.k8s.localhost or http://clickhouse.k8s.localhost:8123"
+	@echo "ClickHouse native: clickhouse.k8s.localhost:9000"
+	@echo "Kafka:            kafka.k8s.localhost:9094"
+
+credentials: ## Print local data-tool and database credentials
+	@echo "pgAdmin email:       admin@local.dev"
+	@printf "pgAdmin password:    "; kubectl --context "$(KUBE_CONTEXT)" --namespace data get secret pgadmin-credentials --output=jsonpath='{.data.password}' | base64 --decode; echo
+	@printf "PostgreSQL username: "; kubectl --context "$(KUBE_CONTEXT)" --namespace data get secret postgres-app --output=jsonpath='{.data.username}' | base64 --decode; echo
+	@printf "PostgreSQL password: "; kubectl --context "$(KUBE_CONTEXT)" --namespace data get secret postgres-app --output=jsonpath='{.data.password}' | base64 --decode; echo
+	@printf "ClickHouse username: "; kubectl --context "$(KUBE_CONTEXT)" --namespace data get secret clickhouse-credentials --output=jsonpath='{.data.username}' | base64 --decode; echo
+	@printf "ClickHouse password: "; kubectl --context "$(KUBE_CONTEXT)" --namespace data get secret clickhouse-credentials --output=jsonpath='{.data.password}' | base64 --decode; echo
 
 load: ## Load IMAGE into the Kind cluster
 	@test -n "$(IMAGE)" || { echo "Usage: make load IMAGE=example/app:dev"; exit 1; }

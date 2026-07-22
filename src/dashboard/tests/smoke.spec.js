@@ -10,3 +10,23 @@ test('dashboard shows its own ready service card', async ({ page }) => {
   await expect(serviceCard.locator('.status-ready')).toBeVisible()
   await expect(serviceCard.getByRole('link', { name: 'https://dashboard.k8s.localhost' })).toBeVisible()
 })
+
+test('dashboard shows data tools and host database endpoints', async ({ page }) => {
+  await page.goto('/')
+
+  for (const url of [
+    'https://pgadmin.k8s.localhost',
+    'https://kafbat.k8s.localhost',
+    'https://clickhouse.k8s.localhost',
+  ]) {
+    await expect(page.getByRole('link', { name: url })).toBeVisible()
+  }
+
+  for (const endpoint of [
+    'postgres.k8s.localhost:5432',
+    'clickhouse.k8s.localhost:9000',
+    'kafka.k8s.localhost:9094',
+  ]) {
+    await expect(page.getByText(endpoint, { exact: true })).toBeVisible()
+  }
+})

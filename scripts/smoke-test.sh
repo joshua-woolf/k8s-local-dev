@@ -10,14 +10,23 @@ kubectl --context "${kube_context}" wait --for=condition=Ready nodes --all --tim
 kubectl --context "${kube_context}" --namespace dashboard rollout status deployment/dashboard --timeout=180s
 kubectl --context "${kube_context}" --namespace observability rollout status deployment/otel-lgtm --timeout=300s
 kubectl --context "${kube_context}" --namespace observability rollout status daemonset/alloy --timeout=180s
+kubectl --context "${kube_context}" --namespace data rollout status deployment/pgadmin --timeout=300s
 kubectl --context "${kube_context}" --namespace data rollout status statefulset/clickhouse --timeout=300s
 kubectl --context "${kube_context}" --namespace data wait --for=condition=Ready cluster/postgres --timeout=300s
 kubectl --context "${kube_context}" --namespace data wait --for=condition=Ready kafka/kafka --timeout=420s
+kubectl --context "${kube_context}" --namespace data rollout status deployment/kafbat --timeout=300s
 kubectl --context "${kube_context}" --namespace dashboard wait --for=condition=Ready certificate/dashboard-tls --timeout=180s
 kubectl --context "${kube_context}" --namespace observability wait --for=condition=Ready certificate/grafana-tls --timeout=180s
+kubectl --context "${kube_context}" --namespace data wait --for=condition=Ready certificate/pgadmin-tls --timeout=180s
+kubectl --context "${kube_context}" --namespace data wait --for=condition=Ready certificate/kafbat-tls --timeout=180s
+kubectl --context "${kube_context}" --namespace data wait --for=condition=Ready certificate/clickhouse-http-tls --timeout=180s
 
 curl --fail --silent --show-error --cacert "${ca_file}" https://dashboard.k8s.localhost/healthz >/dev/null
 curl --fail --silent --show-error --cacert "${ca_file}" https://grafana.k8s.localhost/api/health >/dev/null
+curl --fail --silent --show-error --cacert "${ca_file}" https://pgadmin.k8s.localhost/misc/ping >/dev/null
+curl --fail --silent --show-error --cacert "${ca_file}" https://kafbat.k8s.localhost/actuator/health >/dev/null
+test "$(curl --fail --silent --show-error --cacert "${ca_file}" \
+  https://kafbat.k8s.localhost/api/clusters | jq --raw-output '.[0].status')" = "ONLINE"
 
 if kubectl --context "${kube_context}" auth can-i get secrets \
   --as=system:serviceaccount:dashboard:dashboard --all-namespaces | grep -qx yes; then
@@ -32,9 +41,17 @@ clickhouse_user="$(kubectl --context "${kube_context}" --namespace data get secr
 clickhouse_password="$(kubectl --context "${kube_context}" --namespace data get secret clickhouse-credentials --output=jsonpath='{.data.password}' | base64 --decode)"
 kubectl --context "${kube_context}" --namespace data exec statefulset/clickhouse -- \
   clickhouse-client --user "${clickhouse_user}" --password "${clickhouse_password}" --query 'SELECT 1' >/dev/null
+test "$(curl --fail --silent --show-error --cacert "${ca_file}" \
+  --user "${clickhouse_user}:${clickhouse_password}" \
+  --data-binary 'SELECT 1' https://clickhouse.k8s.localhost/)" = "1"
+test "$(curl --fail --silent --show-error \
+  --user "${clickhouse_user}:${clickhouse_password}" \
+  --data-binary 'SELECT 1' http://clickhouse.k8s.localhost:8123/)" = "1"
 
 kafka_pod="$(kubectl --context "${kube_context}" --namespace data get pod \
   --selector=strimzi.io/name=kafka-kafka --output=jsonpath='{.items[0].metadata.name}')"
+kubectl --context "${kube_context}" --namespace data exec "${kafka_pod}" -- \
+  grep -q 'EXTERNAL-9094://kafka.k8s.localhost:9094' /tmp/strimzi.properties
 kubectl --context "${kube_context}" --namespace data exec "${kafka_pod}" -- \
   /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 \
   --create --if-not-exists --topic localdev-smoke --partitions 1 --replication-factor 1 >/dev/null
@@ -44,5 +61,21 @@ kafka_result="$(kubectl --context "${kube_context}" --namespace data exec "${kaf
   /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 \
   --topic localdev-smoke --from-beginning --max-messages 1 --timeout-ms 10000 2>/dev/null)"
 test "${kafka_result}" = "localdev-smoke"
+
+for endpoint in \
+  postgres.k8s.localhost:5432 \
+  clickhouse.k8s.localhost:8123 \
+  clickhouse.k8s.localhost:9000 \
+  kafka.k8s.localhost:9094; do
+  host="${endpoint%:*}"
+  port="${endpoint##*:}"
+  nc -z -w 5 "${host}" "${port}"
+done
+
+kubectl --context "${kube_context}" --namespace data exec deployment/pgadmin -- \
+  test -r /run/secrets/postgres/password
+pgadmin_server="$(kubectl --context "${kube_context}" --namespace data exec deployment/pgadmin -- \
+  python3 -c "import sqlite3; db=sqlite3.connect('/var/lib/pgadmin/pgadmin4.db'); print(db.execute('select host from server where name = ?', ('Local PostgreSQL',)).fetchone()[0])")"
+test "${pgadmin_server}" = "postgres-rw.data.svc.cluster.local"
 
 echo "Cluster smoke tests passed"
