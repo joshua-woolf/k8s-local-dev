@@ -1,0 +1,22 @@
+version: 1.7.1
+dependencies:
+  - name: alloy
+    repository: https://grafana.github.io/helm-charts
+    version: 1.10.1
+  - name: cert-manager
+    repository: https://charts.jetstack.io
+    version: v1.21.0
+  - name: cloudnative-pg
+    repository: https://cloudnative-pg.github.io/charts
+    version: 0.29.0
+  - name: gatekeeper
+    repository: https://open-policy-agent.github.io/gatekeeper/charts
+    version: 3.23.0
+  - name: strimzi-kafka-operator
+    repository: https://strimzi.io/charts/
+    version: 1.1.0
+  - name: traefik
+    repository: https://traefik.github.io/charts
+    version: 41.0.2
+digest: sha256:fdb822acad778c3d9c54718acaec09f2a133bd229d7c9a6d701c8c17c6e7acd0
+generated: "2026-07-22T17:25:00.201679+02:00"

@@ -1,83 +1,213 @@
 # Kubernetes Local Dev
 
-## Overview
+A deliberately small, single-node Kubernetes development environment built on
+[Kind](https://kind.sigs.k8s.io/). It provides local HTTPS ingress, an
+observability backend, common data services, optional policy checks, and a small
+dashboard without modifying host DNS settings.
 
-This repository contains a baseline setup of a Kubernetes cluster for local development and an example dashboard application that displays information on the applications running inside the cluster.
+## What runs
 
-The dashboard can be locally built and deployed to the cluster and includes canary deployments, OpenTelemetry integration and smoke tests to verify that the application is working as expected when deployed.
+The core profile contains:
 
-The baseline includes:
-- Kubernetes:
-  - [Kind Cluster](https://kind.sigs.k8s.io)
-- Container Registry:
-  - [Distribution Registry](https://distribution.github.io/distribution)
-  - [Registry UI](https://github.com/Joxit/docker-registry-ui)
-- DNS:
-  - [Bind9](https://bind9.net)
-  - [External DNS](https://kubernetes-sigs.github.io/external-dns)
-- Ingress:
-  - [Traefik](https://traefik.io/traefik)
-  - [Cert Manager](https://cert-manager.io)
-- Observability:
-  - [Metrics Server](https://kubernetes-sigs.github.io/metrics-server)
-  - [Prometheus](https://prometheus.io)
-  - [Grafana](https://grafana.com)
-  - [Elastic Stack](https://www.elastic.co/guide/en/cloud-on-k8s/current)
-  - [OpenTelemetry Collector](https://opentelemetry.io/docs/collector)
-- Progressive Delivery:
-  - [Flagger](https://flagger.app)
-- Other:
-  - [Gatekeeper](https://open-policy-agent.github.io/gatekeeper)
-  - [KEDA](https://keda.sh)
+- Traefik for standard Kubernetes `Ingress` resources
+- cert-manager with a repository-local development CA
+- Grafana Alloy for pod logs, annotated Prometheus metrics, and OTLP
+- `grafana/otel-lgtm` with Grafana, Loki, Tempo, Prometheus, and Pyroscope
+- CloudNativePG with one PostgreSQL instance
+- The local service dashboard
 
-All of the container images are scanned using [Trivy](https://trivy.dev) and cached in the local container registry to speed up cluster provisioning between changes.
+The full profile additionally contains:
+
+- A single-node ClickHouse StatefulSet
+- A single combined Strimzi KRaft controller/broker
+- Gatekeeper with warning-only policies for application namespaces
+
+This is a disposable development environment. It is not a production topology:
+databases have one replica, Gatekeeper does not enforce, and the LGTM container
+is intended for development and testing.
+
+## Host access
+
+Names beneath `.localhost` resolve to loopback without Bind9, ExternalDNS, or
+changes to macOS network configuration:
+
+| Service | Address |
+| --- | --- |
+| Dashboard | `https://dashboard.k8s.localhost` |
+| Grafana | `https://grafana.k8s.localhost` |
+| Kafka bootstrap | `kafka.k8s.localhost:9094` |
+
+Kind maps host ports `80` and `443` to fixed Traefik NodePorts. Kafka uses
+`9094` for bootstrap and advertises its single broker on `9095`. Every mapped
+port listens only on `127.0.0.1`.
+
+PostgreSQL and ClickHouse stay inside the cluster. Run `make ports` for their
+port-forward commands.
 
 ## Prerequisites
 
-Since this is a hobby project, it hasn't been built with cross-platform compatibility in mind.
+This project targets macOS with Docker Desktop. Allocate at least 8 GB to
+Docker for the core profile and 10–12 GB for the full profile.
 
-There are some commands specific to macOS used in the setup and teardown scripts, so it would take some effort to get this working on other platforms. I run this on a Mac M4 Pro and have included a [Brewfile](./Brewfile) with the dependencies I used when working on this project.
+Install the tools in the Brewfile:
 
-You can install [Homebrew](https://brew.sh) and the dependencies with the following commands:
-
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
+```sh
 brew bundle
 ```
 
-You may need to allow execution of the scripts by running the following command:
+The important commands are Docker, Kind, kubectl, Helm, Helmfile, mkcert,
+kubeconform, Node.js, and shellcheck. The browser smoke test uses an installed
+Google Chrome by default.
 
-```bash
-chmod +x ./setup.sh
-chmod +x ./teardown.sh
+## Quick start
+
+Trust the dedicated repository CA. This is the only command that changes the
+host trust store and macOS may ask for confirmation:
+
+```sh
+make trust
 ```
 
-## Getting Started
+Create the core cluster:
 
-*⚠️ Before running the project it's a good idea to understand what the setup is going to do as it will need to change some of your host machine's configuration to trust a generated root CA certificate and modify DNS settings on your active network. This is done to enable secure access services running inside the cluster from your host machine with working DNS and TLS. When running the scripts you may be prompted to enter your password for elevated privileges. The teardown script will revert the changes made.*
-
-To setup the cluster, you can run the following command:
-
-```bash
-./setup.sh
+```sh
+make up-core
 ```
 
-To teardown the cluster, you can run the following command:
+Or create the full cluster:
 
-```bash
-./teardown.sh
+```sh
+make up
 ```
+
+Open `https://dashboard.k8s.localhost`. Both setup commands are safe to rerun;
+they reconcile charts and manifests and reload the locally built dashboard.
+
+## Commands
+
+| Command | Purpose |
+| --- | --- |
+| `make doctor` | Check tools and Docker availability |
+| `make trust` | Generate and install this repository's mkcert CA |
+| `make untrust` | Remove that CA from host trust stores |
+| `make up-core` | Reconcile the lightweight profile |
+| `make up` | Reconcile the full profile |
+| `make dashboard` | Rebuild, load, and redeploy the dashboard |
+| `make load IMAGE=example/app:dev` | Load another local image into Kind |
+| `make ports` | Print data-service access commands |
+| `make status` | Show nodes, Helm releases, pods, and ingresses |
+| `make test` | Run dashboard lint and unit tests |
+| `make validate` | Render and schema-check every deployment input |
+| `make smoke` | Test the running cluster and dashboard in Chrome |
+| `make reset CONFIRM=1` | Delete the cluster and every local PVC |
+
+Kind does not have a useful stop/start lifecycle. Leave the cluster running or
+delete and recreate it. `make reset` does not remove the trusted CA; use
+`make untrust` separately.
+
+## TLS model
+
+`make trust` sets `CAROOT` to `.state/mkcert`, generates a dedicated CA, and
+installs only that root certificate in host trust stores. `.state/` is ignored
+by Git and the private key is mode `0600`.
+
+During `make up`, the CA pair is synchronized into a `local-dev-ca` TLS Secret
+in the cert-manager namespace. The `local-dev-ca` ClusterIssuer signs a separate
+leaf certificate for each Ingress. Ingresses request certificates with:
+
+```yaml
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: local-dev-ca
+spec:
+  tls:
+    - hosts:
+        - example.k8s.localhost
+      secretName: example-tls
+```
+
+Never commit `.state/mkcert/rootCA-key.pem`. A copy of that key can impersonate
+any site to a machine that trusts the CA.
+
+Node clients do not always consult the macOS trust store. For a Node process,
+set `NODE_EXTRA_CA_CERTS="$PWD/.state/mkcert/rootCA.pem"`.
+
+## Dashboard discovery
+
+The dashboard reads only Ingresses, Services, and EndpointSlices. Its service
+account cannot read Secrets.
+
+Resources are opt-in. Add annotations such as:
+
+```yaml
+metadata:
+  annotations:
+    localdev.dashboard/enabled: "true"
+    localdev.dashboard/name: Example API
+    localdev.dashboard/category: Applications
+    localdev.dashboard/description: Example service used during development
+```
+
+Annotated Ingresses become HTTPS links. Annotated Services receive cluster DNS
+and port-forward instructions. A service that has permanent host access can
+also provide `localdev.dashboard/host`, `localdev.dashboard/port`, and
+`localdev.dashboard/protocol` annotations.
+
+## Local application images
+
+Use a real non-`latest` tag and load the image directly:
+
+```sh
+docker build -t example-api:dev-1 .
+make load IMAGE=example-api:dev-1
+```
+
+Set `imagePullPolicy: IfNotPresent` in the workload. There is no local registry,
+registry certificate, mirror, or image-cache synchronization loop.
+
+## Data services
+
+CloudNativePG generates the PostgreSQL application Secret. Retrieve connection
+details with normal kubectl access when needed:
+
+```sh
+kubectl -n data get secret postgres-app
+kubectl -n data port-forward service/postgres-rw 5432:5432
+```
+
+ClickHouse credentials are generated once into `data/clickhouse-credentials`.
+Kafka is reachable from the host at `kafka.k8s.localhost:9094`; the broker
+metadata endpoint is port `9095`.
+
+Deleting the Kind cluster deletes all PVC data. Keep schema migrations and seed
+steps reproducible rather than treating this cluster as a backup.
+
+## Profiles and policy
+
+The dashboard namespace carries `policy.localdev/enabled: "true"`. Gatekeeper
+constraints match only namespaces with that label and currently warn about:
+
+- Missing CPU or memory requests and limits
+- Privileged containers
+- Images without an explicit tag/digest, or images using `latest`
+
+System, controller, observability, and data namespaces are excluded. Move a
+constraint from `warn` to `deny` only after existing application workloads pass.
 
 ## Troubleshooting
 
-There is sometimes an issue where the DNS cache on the host machine needs to be flushed if names are not resolving. You can flush the cache with the following commands:
+Check the overall state:
 
-```bash
-sudo dscacheutil -flushcache
-sudo killall -HUP mDNSResponder
+```sh
+make status
+kubectl get certificate,certificaterequest -A
+kubectl get events -A --sort-by=.lastTimestamp
 ```
 
-## Contributing
+If ports 80, 443, 9094, or 9095 are occupied, Kind cannot create the node.
+Stop the conflicting process before retrying.
 
-Since this is a hobby project, it won't be actively maintained. However, if you have any suggestions or feedback, please feel free to open an issue or submit a pull request.
+If an older checkout of this repository is still running, use that checkout's
+legacy teardown before creating v2. The old setup changed the active network's
+DNS servers and installed a different system CA. Teardown deletes the old Kind
+cluster and all of its local data.

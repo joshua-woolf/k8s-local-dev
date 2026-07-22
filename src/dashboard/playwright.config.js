@@ -9,6 +9,7 @@ export default defineConfig({
   use: {
     baseURL: process.env.BASE_URL || 'https://dashboard.k8s.localhost',
     channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
+    ignoreHTTPSErrors: process.env.PLAYWRIGHT_IGNORE_HTTPS_ERRORS === '1',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },

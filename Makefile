@@ -8,8 +8,9 @@ IMAGE ?=
 CONFIRM ?=
 DASHBOARD_IMAGE ?= local/dashboard
 DASHBOARD_TAG ?= dev
+PLAYWRIGHT_CHANNEL ?= chrome
 
-.PHONY: help doctor cluster helm-core helm-full require-ca tls trust untrust core-resources full-resources dashboard-image dashboard up-core up status ports load test smoke reset
+.PHONY: help doctor cluster helm-core helm-full require-ca tls trust untrust core-resources full-resources dashboard-image dashboard up-core up status ports load test validate smoke reset
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "; printf "Usage: make <target>\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -73,7 +74,7 @@ dashboard-image: cluster ## Build and load the dashboard image into Kind
 	kind load docker-image "$(DASHBOARD_IMAGE):$(DASHBOARD_TAG)" --name "$(CLUSTER_NAME)"
 
 dashboard: dashboard-image ## Install or refresh the dashboard
-	helm upgrade dashboard charts/dashboard --install --atomic --create-namespace --namespace dashboard --timeout 5m --wait \
+	helm upgrade dashboard charts/dashboard --install --rollback-on-failure --create-namespace --namespace dashboard --timeout 5m --wait \
 		--set-string image.repository="$(DASHBOARD_IMAGE)" \
 		--set-string image.tag="$(DASHBOARD_TAG)"
 	@kubectl --context "$(KUBE_CONTEXT)" --namespace dashboard rollout restart deployment/dashboard
@@ -87,7 +88,7 @@ up: doctor require-ca cluster helm-full tls full-resources dashboard ## Create t
 
 status: ## Show cluster nodes, releases, pods, and ingresses
 	@kubectl --context "$(KUBE_CONTEXT)" get nodes
-	@helm list --all-namespaces
+	@helm --kube-context "$(KUBE_CONTEXT)" list --all-namespaces
 	@kubectl --context "$(KUBE_CONTEXT)" get pods --all-namespaces
 	@kubectl --context "$(KUBE_CONTEXT)" get ingress --all-namespaces 2>/dev/null || true
 
@@ -103,8 +104,20 @@ load: ## Load IMAGE into the Kind cluster
 test: ## Run dashboard lint and unit tests
 	cd src/dashboard && npm_config_cache="$(CURDIR)/.state/npm-cache" npm ci && npm run lint && npm test
 
-smoke: require-ca ## Run the browser smoke test against the cluster
-	cd src/dashboard && NODE_EXTRA_CA_CERTS="$(CURDIR)/.state/mkcert/rootCA.pem" npm run test:smoke
+validate: ## Render and validate charts, manifests, scripts, and dashboard code
+	@mkdir -p .rendered
+	helmfile template > .rendered/platform.yaml
+	helm lint charts/dashboard
+	helm template dashboard charts/dashboard --namespace dashboard > .rendered/dashboard.yaml
+	@find manifests -name '*.yaml' -print0 | xargs -0 kubeconform -strict -ignore-missing-schemas -summary
+	@kubeconform -strict -ignore-missing-schemas -summary .rendered/platform.yaml .rendered/dashboard.yaml
+	@shellcheck scripts/*.sh
+	@$(MAKE) --no-print-directory test
+
+smoke: require-ca ## Run cluster and browser smoke tests
+	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/smoke-test.sh
+	cd src/dashboard && NODE_EXTRA_CA_CERTS="$(CURDIR)/.state/mkcert/rootCA.pem" \
+		PLAYWRIGHT_CHANNEL="$(PLAYWRIGHT_CHANNEL)" npm run test:smoke
 
 reset: ## Delete the cluster and all local cluster data (requires CONFIRM=1)
 	@test "$(CONFIRM)" = "1" || { echo "This deletes the cluster and every PVC. Re-run as: make reset CONFIRM=1"; exit 1; }
