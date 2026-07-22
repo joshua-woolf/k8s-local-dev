@@ -1,12 +1,13 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
+.NOTPARALLEL:
 
 CLUSTER_NAME ?= local-dev
 KUBE_CONTEXT ?= kind-$(CLUSTER_NAME)
 IMAGE ?=
 CONFIRM ?=
 
-.PHONY: help doctor cluster helm-core helm-full up-core up status load reset
+.PHONY: help doctor cluster helm-core helm-full require-ca tls trust untrust up-core up status load reset
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "; printf "Usage: make <target>\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -36,10 +37,28 @@ helm-core: ## Reconcile the lightweight platform controllers
 helm-full: ## Reconcile all platform controllers
 	helmfile sync
 
-up-core: doctor cluster helm-core ## Create the lightweight local cluster
+require-ca:
+	@test -s .state/mkcert/rootCA.pem -a -s .state/mkcert/rootCA-key.pem || { echo "Local CA not found. Run 'make trust' first."; exit 1; }
+
+tls: require-ca ## Synchronize the local CA and ClusterIssuer into the cluster
+	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-ca.sh
+
+trust: ## Generate and trust the dedicated local development CA
+	@./scripts/trust-ca.sh
+	@if kind get clusters 2>/dev/null | grep -qx "$(CLUSTER_NAME)" && \
+		kubectl --context "$(KUBE_CONTEXT)" -n cert-manager get deployment cert-manager >/dev/null 2>&1; then \
+		CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-ca.sh; \
+	else \
+		echo "CA is trusted. It will be synchronized on the next 'make up'."; \
+	fi
+
+untrust: ## Remove this repository's CA from the host trust stores
+	@./scripts/untrust-ca.sh
+
+up-core: doctor require-ca cluster helm-core tls ## Create the lightweight local cluster
 	@$(MAKE) --no-print-directory status
 
-up: doctor cluster helm-full ## Create the complete local cluster
+up: doctor require-ca cluster helm-full tls ## Create the complete local cluster
 	@$(MAKE) --no-print-directory status
 
 status: ## Show cluster nodes, releases, pods, and ingresses
