@@ -1,0 +1,57 @@
+deployment:
+  replicas: 1
+
+api:
+  dashboard: false
+
+gateway:
+  enabled: false
+
+gatewayClass:
+  enabled: false
+
+providers:
+  kubernetesCRD:
+    enabled: false
+  kubernetesGateway:
+    enabled: false
+  kubernetesIngress:
+    enabled: true
+    allowEmptyServices: true
+    publishedService:
+      enabled: true
+
+ingressClass:
+  enabled: true
+  isDefaultClass: true
+
+ports:
+  web:
+    nodePort: 30080
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    nodePort: 30443
+
+service:
+  spec:
+    type: NodePort
+
+accessLog:
+  enabled: true
+  format: json
+
+log:
+  level: INFO
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
