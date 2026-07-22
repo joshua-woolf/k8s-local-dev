@@ -32,11 +32,63 @@ curl --fail --silent --show-error --cacert "${ca_file}" https://valkey-ui.k8s.lo
 test "$(curl --fail --silent --show-error --cacert "${ca_file}" \
   https://kafbat.k8s.localhost/api/clusters | jq --raw-output '.[0].status')" = "ONLINE"
 
+grafana_dashboards="$(curl --fail --silent --show-error --cacert "${ca_file}" \
+  'https://grafana.k8s.localhost/api/search?tag=local-dev')"
+for dashboard_uid in \
+  localdev-applications \
+  localdev-cert-manager \
+  localdev-clickhouse \
+  localdev-gatekeeper \
+  localdev-kafka \
+  localdev-kubernetes \
+  localdev-observability \
+  localdev-postgres \
+  localdev-traefik \
+  localdev-valkey; do
+  test "$(jq --arg uid "${dashboard_uid}" '[.[] | select(.uid == $uid)] | length' <<<"${grafana_dashboards}")" = "1"
+done
+
+prometheus_query() {
+  kubectl --context "${kube_context}" --namespace observability exec deployment/otel-lgtm -- \
+    curl --fail --silent --show-error --get http://127.0.0.1:9090/api/v1/query \
+      --data-urlencode "query=$1"
+}
+
+for metrics_job in \
+  alloy \
+  cadvisor \
+  cert-manager \
+  clickhouse \
+  cloudnative-pg \
+  gatekeeper \
+  grafana \
+  kafbat \
+  kafka \
+  kube-state-metrics \
+  kubelet \
+  loki \
+  postgresql \
+  prometheus \
+  pyroscope \
+  tempo \
+  traefik \
+  valkey; do
+  query_result="$(prometheus_query "up{job=\"${metrics_job}\"} == 1")"
+  test "$(jq '.data.result | length' <<<"${query_result}")" -gt 0
+done
+
 if kubectl --context "${kube_context}" auth can-i get secrets \
   --as=system:serviceaccount:dashboard:dashboard --all-namespaces | grep -qx yes; then
   echo "Dashboard service account unexpectedly has Secret access" >&2
   exit 1
 fi
+
+test "$(kubectl --context "${kube_context}" --namespace data auth can-i get \
+  secret/valkey-credentials --as=system:serviceaccount:dashboard:dashboard)" = "yes"
+test "$(kubectl --context "${kube_context}" --namespace data auth can-i list \
+  secrets --as=system:serviceaccount:dashboard:dashboard)" = "no"
+test "$(kubectl --context "${kube_context}" --namespace observability auth can-i get \
+  secret/grafana-tls --as=system:serviceaccount:dashboard:dashboard)" = "no"
 
 kubectl --context "${kube_context}" --namespace data exec postgres-1 -- \
   psql --username postgres --dbname postgres --tuples-only --command 'SELECT 1' >/dev/null

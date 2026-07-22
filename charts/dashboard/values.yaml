@@ -12,6 +12,14 @@ tls:
 
 otelEndpoint: http://alloy.observability.svc.cluster.local:4318
 
+credentials:
+  namespace: data
+  secretNames:
+    - clickhouse-credentials
+    - pgadmin-credentials
+    - postgres-app
+    - valkey-credentials
+
 resources:
   requests:
     cpu: 50m

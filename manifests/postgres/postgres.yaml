@@ -18,6 +18,7 @@ spec:
       localdev.dashboard/host: postgres.k8s.localhost
       localdev.dashboard/port: "5432"
       localdev.dashboard/protocol: postgresql
+      localdev.dashboard/credentials: postgres
   bootstrap:
     initdb:
       database: app

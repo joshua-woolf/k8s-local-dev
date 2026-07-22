@@ -33,6 +33,17 @@ test('dashboard shows data tools and host database endpoints', async ({ page }) 
   }
 })
 
+test('dashboard reveals allowlisted credentials on demand', async ({ page }) => {
+  await page.goto('/')
+
+  const pgadminCard = page.locator('.service-card').filter({ hasText: 'pgAdmin' })
+  await pgadminCard.getByRole('button', { name: 'Reveal credentials' }).click()
+
+  await expect(pgadminCard.getByText('admin@local.dev', { exact: true })).toBeVisible()
+  await expect(pgadminCard.locator('[data-sensitive="true"]')).toBeVisible()
+  await expect(pgadminCard.locator('.credential-content .copy-button')).toHaveCount(2)
+})
+
 test('Valkey Admin automatically connects to the local instance', async ({ page }) => {
   await page.goto('https://valkey-ui.k8s.localhost')
 

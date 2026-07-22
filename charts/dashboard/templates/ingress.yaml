@@ -10,6 +10,7 @@ metadata:
     localdev.dashboard/name: Dashboard
     localdev.dashboard/category: Applications
     localdev.dashboard/description: Local cluster services and readiness
+    localdev.dashboard/credentials: none
 spec:
   ingressClassName: traefik
   rules:

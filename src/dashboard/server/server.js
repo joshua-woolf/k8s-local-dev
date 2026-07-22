@@ -1,6 +1,7 @@
 import express from 'express'
 import path, { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { credentialsController } from './controllers/credentials.js'
 import { servicesController } from './controllers/services.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { requestLogger } from './middleware/requestLogger.js'
@@ -9,10 +10,11 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 class DashboardServer {
-  constructor({ controller = servicesController } = {}) {
+  constructor({ controller = servicesController, credentials = credentialsController } = {}) {
     this.app = express()
     this.port = Number.parseInt(process.env.PORT || '3000', 10)
     this.controller = controller
+    this.credentials = credentials
     this.setupMiddleware()
     this.setupRoutes()
     this.setupErrorHandling()
@@ -34,6 +36,7 @@ class DashboardServer {
     this.app.get('/healthz', (_req, res) => res.json({ status: 'ok' }))
     this.app.get('/readyz', (_req, res) => res.json({ status: 'ready' }))
     this.app.get('/api/services', this.controller)
+    this.app.get('/api/credentials/:profile', this.credentials)
     this.app.use((_req, res) => {
       res.sendFile(path.join(__dirname, 'public', 'index.html'))
     })

@@ -20,6 +20,7 @@ test('returns only explicitly enabled ingresses with endpoint readiness', async 
           annotations: {
             'localdev.dashboard/enabled': 'true',
             'localdev.dashboard/name': 'Dashboard',
+            'localdev.dashboard/credentials': 'none',
           },
         },
         spec: {
@@ -46,6 +47,7 @@ test('returns only explicitly enabled ingresses with endpoint readiness', async 
   assert.equal(items.length, 1)
   assert.equal(items[0].name, 'Dashboard')
   assert.equal(items[0].status, 'ready')
+  assert.equal(items[0].credentialProfile, 'none')
   assert.deepEqual(items[0].urls, ['https://dashboard.k8s.localhost'])
 })
 

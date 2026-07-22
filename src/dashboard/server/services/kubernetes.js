@@ -21,6 +21,7 @@ function displayMetadata(resource) {
     name: annotations[`${annotationPrefix}name`] || resource.metadata.name,
     category: annotations[`${annotationPrefix}category`] || 'Applications',
     description: annotations[`${annotationPrefix}description`] || '',
+    credentialProfile: annotations[`${annotationPrefix}credentials`] || null,
     namespace: resource.metadata.namespace,
     resourceName: resource.metadata.name,
   }

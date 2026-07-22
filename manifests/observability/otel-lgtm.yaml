@@ -132,6 +132,7 @@ metadata:
     localdev.dashboard/name: Grafana
     localdev.dashboard/category: Observability
     localdev.dashboard/description: Logs, metrics, traces, and profiles
+    localdev.dashboard/credentials: grafana
 spec:
   ingressClassName: traefik
   rules:

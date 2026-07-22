@@ -11,6 +11,7 @@ metadata:
     localdev.dashboard/host: valkey.k8s.localhost
     localdev.dashboard/port: "6379"
     localdev.dashboard/protocol: valkey
+    localdev.dashboard/credentials: valkey
 spec:
   selector:
     app.kubernetes.io/name: valkey

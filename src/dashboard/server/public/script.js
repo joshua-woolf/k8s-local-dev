@@ -13,6 +13,7 @@ const elements = {
 }
 
 let services = []
+const credentialCache = new Map()
 
 function createElement(tagName, className, text) {
   const element = document.createElement(tagName)
@@ -72,6 +73,61 @@ function createTargetRow(label, value, { href, copyValue } = {}) {
   return row
 }
 
+function renderCredentialFields(panel, credentials) {
+  panel.replaceChildren()
+  for (const field of credentials.fields) {
+    const row = createTargetRow(field.label, field.value, { copyValue: field.value })
+    if (field.sensitive) row.dataset.sensitive = 'true'
+    panel.append(row)
+  }
+}
+
+async function revealCredentials(service, panel, button) {
+  button.disabled = true
+  button.textContent = 'Loading…'
+
+  try {
+    const response = await fetch(`/api/credentials/${encodeURIComponent(service.credentialProfile)}`, {
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    })
+    if (!response.ok) throw new Error(`Credentials API returned ${response.status}`)
+    const credentials = await response.json()
+    credentialCache.set(service.credentialProfile, credentials)
+    renderCredentialFields(panel, credentials)
+  }
+  catch (error) {
+    button.disabled = false
+    button.textContent = 'Try again'
+    const message = createElement('span', 'credential-error', error.message)
+    panel.append(message)
+  }
+}
+
+function createCredentialsPanel(service) {
+  if (!service.credentialProfile) return null
+
+  const section = createElement('section', 'credentials-panel')
+  const heading = createElement('div', 'credential-heading', 'Credentials')
+  const content = createElement('div', 'credential-content')
+  content.setAttribute('aria-live', 'polite')
+  section.append(heading, content)
+
+  const cached = credentialCache.get(service.credentialProfile)
+  if (cached) {
+    renderCredentialFields(content, cached)
+  }
+  else {
+    const button = createElement('button', 'credential-button', 'Reveal credentials')
+    button.type = 'button'
+    button.addEventListener('click', () => {
+      revealCredentials(service, content, button).catch(error => console.error('Credential reveal failed', error))
+    })
+    content.append(button)
+  }
+  return section
+}
+
 function createCard(service) {
   const card = createElement('article', 'service-card')
   const header = createElement('div', 'card-header')
@@ -96,6 +152,8 @@ function createCard(service) {
     }
   }
   card.append(targets)
+  const credentialsPanel = createCredentialsPanel(service)
+  if (credentialsPanel) card.append(credentialsPanel)
   return card
 }
 

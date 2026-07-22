@@ -31,6 +31,7 @@ metadata:
     localdev.dashboard/host: clickhouse.k8s.localhost
     localdev.dashboard/port: "9000"
     localdev.dashboard/protocol: clickhouse
+    localdev.dashboard/credentials: clickhouse
 spec:
   selector:
     app.kubernetes.io/name: clickhouse
@@ -145,6 +146,7 @@ metadata:
     localdev.dashboard/name: ClickHouse HTTP
     localdev.dashboard/category: Data
     localdev.dashboard/description: HTTPS access to the ClickHouse HTTP interface
+    localdev.dashboard/credentials: clickhouse
 spec:
   ingressClassName: traefik
   rules:

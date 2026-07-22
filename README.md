@@ -12,6 +12,7 @@ The core profile contains:
 - Traefik for standard Kubernetes `Ingress` resources
 - cert-manager with a repository-local development CA
 - Grafana Alloy for pod logs, annotated Prometheus metrics, and OTLP
+- kube-state-metrics plus kubelet/cAdvisor metrics for Kubernetes workload state and resources
 - `grafana/otel-lgtm` with Grafana, Loki, Tempo, Prometheus, and Pyroscope
 - CloudNativePG with one PostgreSQL instance
 - pgAdmin with the local PostgreSQL connection preconfigured
@@ -156,10 +157,36 @@ cert-manager certificates cover the HTTPS endpoints on port 443. The dedicated
 TCP entrypoints on 5432, 6379, 8123, 9000, and 9094 are passed through to their
 services and are not TLS-terminated by cert-manager. They remain loopback-only.
 
-## Dashboard discovery
+## Observability
 
-The dashboard reads only Ingresses, Services, and EndpointSlices. Its service
-account cannot read Secrets.
+Alloy is the single collection path. It sends pod logs to Loki, receives OTLP
+from local applications, and remote-writes Prometheus metrics into the LGTM
+Prometheus instance. It scrapes Kubernetes state, kubelet/cAdvisor, platform
+controllers, the LGTM components, and the native or exporter endpoint for each
+data service. pgAdmin and Valkey Admin do not publish useful Prometheus
+application metrics, so their CPU, memory, restarts, and logs come from
+Kubernetes instead. Kafbat additionally publishes its Spring metrics.
+
+Grafana provisions a `Local development` folder containing dashboards for
+Kubernetes, the observability stack, Traefik, cert-manager, Gatekeeper,
+PostgreSQL, ClickHouse, Kafka, Valkey, and the local admin/dashboard apps. The
+dashboard JSON is stored in
+`manifests/observability/grafana-dashboards.yaml`, so recreating the cluster
+does not lose dashboard definitions.
+
+## Dashboard discovery and credentials
+
+The dashboard discovers Ingresses, Services, and EndpointSlices. Credential
+values are fetched only after clicking `Reveal credentials`; they are not
+included in service discovery responses or browser storage. The API uses a
+fixed profile allowlist, disables response caching, and can `get` only
+`postgres-app`, `clickhouse-credentials`, `pgadmin-credentials`, and
+`valkey-credentials` in the `data` namespace. It cannot list Secrets or read a
+Secret in another namespace.
+
+This convenience assumes the cluster dashboard remains loopback-only. Anyone
+who can use `https://dashboard.k8s.localhost` from the host can reveal these
+local development credentials.
 
 Resources are opt-in. Add annotations such as:
 
@@ -170,12 +197,16 @@ metadata:
     localdev.dashboard/name: Example API
     localdev.dashboard/category: Applications
     localdev.dashboard/description: Example service used during development
+    localdev.dashboard/credentials: none
 ```
 
 Annotated Ingresses become HTTPS links. Annotated Services receive cluster DNS
 and port-forward instructions. A service that has permanent host access can
 also provide `localdev.dashboard/host`, `localdev.dashboard/port`, and
-`localdev.dashboard/protocol` annotations.
+`localdev.dashboard/protocol` annotations. Credential profiles are deliberately
+code-defined rather than arbitrary Secret names; add a profile to the server
+allowlist and the Role's `resourceNames` before referencing it from an
+annotation.
 
 ## Local application images
 

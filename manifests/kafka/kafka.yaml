@@ -116,3 +116,4 @@ spec:
             localdev.dashboard/host: kafka.k8s.localhost
             localdev.dashboard/port: "9094"
             localdev.dashboard/protocol: kafka
+            localdev.dashboard/credentials: none

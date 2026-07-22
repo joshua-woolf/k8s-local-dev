@@ -152,6 +152,7 @@ metadata:
     localdev.dashboard/name: pgAdmin
     localdev.dashboard/category: Data tools
     localdev.dashboard/description: PostgreSQL administration with the local database preconfigured
+    localdev.dashboard/credentials: pgadmin
 spec:
   ingressClassName: traefik
   rules:
