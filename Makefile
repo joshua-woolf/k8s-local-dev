@@ -58,13 +58,13 @@ trust: ## Generate and trust the dedicated local development CA
 untrust: ## Remove this repository's CA from the host trust stores
 	@./scripts/untrust-ca.sh
 
-core-resources: ## Reconcile observability and Postgres resources
+core-resources: ## Reconcile observability, Postgres, and pgAdmin resources
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/namespaces.yaml
+	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-data-secrets.sh
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/observability/
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/postgres/
 
-full-resources: core-resources ## Reconcile ClickHouse and Kafka resources
-	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-data-secrets.sh
+full-resources: core-resources ## Reconcile ClickHouse, Kafka, and Kafbat resources
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/clickhouse/
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/kafka/
 	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-policies.sh

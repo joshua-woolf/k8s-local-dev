@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafbat
+  namespace: data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kafbat
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kafbat
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: kafbat
+          image: ghcr.io/kafbat/kafka-ui:v1.5.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KAFKA_CLUSTERS_0_NAME
+              value: Local Kafka
+            - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+              value: kafka-kafka-bootstrap.data.svc.cluster.local:9092
+            - name: DYNAMIC_CONFIG_ENABLED
+              value: "false"
+            - name: JAVA_TOOL_OPTIONS
+              value: -Xms128m -Xmx512m
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafbat
+  namespace: data
+spec:
+  selector:
+    app.kubernetes.io/name: kafbat
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kafbat
+  namespace: data
+  annotations:
+    cert-manager.io/cluster-issuer: local-dev-ca
+    localdev.dashboard/enabled: "true"
+    localdev.dashboard/name: Kafbat UI
+    localdev.dashboard/category: Data tools
+    localdev.dashboard/description: Kafka topics, messages, brokers, and consumer groups
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: kafbat.k8s.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kafbat
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - kafbat.k8s.localhost
+      secretName: kafbat-tls
