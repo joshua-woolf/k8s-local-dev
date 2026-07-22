@@ -15,25 +15,25 @@ spec:
       rego: |
         package k8srequiredresources
 
-        violation contains {"msg": msg} if {
+        violation[{"msg": msg}] {
           container := input.review.object.spec.containers[_]
           not container.resources.requests.cpu
           msg := sprintf("container %q must set requests.cpu", [container.name])
         }
 
-        violation contains {"msg": msg} if {
+        violation[{"msg": msg}] {
           container := input.review.object.spec.containers[_]
           not container.resources.requests.memory
           msg := sprintf("container %q must set requests.memory", [container.name])
         }
 
-        violation contains {"msg": msg} if {
+        violation[{"msg": msg}] {
           container := input.review.object.spec.containers[_]
           not container.resources.limits.cpu
           msg := sprintf("container %q must set limits.cpu", [container.name])
         }
 
-        violation contains {"msg": msg} if {
+        violation[{"msg": msg}] {
           container := input.review.object.spec.containers[_]
           not container.resources.limits.memory
           msg := sprintf("container %q must set limits.memory", [container.name])
@@ -56,7 +56,7 @@ spec:
       rego: |
         package k8snoprivilegedcontainers
 
-        violation contains {"msg": msg} if {
+        violation[{"msg": msg}] {
           container := input.review.object.spec.containers[_]
           object.get(object.get(container, "securityContext", {}), "privileged", false)
           msg := sprintf("container %q must not run privileged", [container.name])
@@ -79,13 +79,13 @@ spec:
       rego: |
         package k8spinnedimages
 
-        violation contains {"msg": msg} if {
+        violation[{"msg": msg}] {
           container := input.review.object.spec.containers[_]
           endswith(container.image, ":latest")
           msg := sprintf("container %q must not use the latest tag", [container.name])
         }
 
-        violation contains {"msg": msg} if {
+        violation[{"msg": msg}] {
           container := input.review.object.spec.containers[_]
           not contains(container.image, "@sha256:")
           segments := split(container.image, "/")

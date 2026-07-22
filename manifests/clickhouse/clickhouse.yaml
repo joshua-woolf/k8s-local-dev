@@ -75,6 +75,9 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+            runAsGroup: 101
+            runAsNonRoot: true
+            runAsUser: 101
           resources:
             requests:
               cpu: 200m

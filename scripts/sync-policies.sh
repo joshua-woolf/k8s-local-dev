@@ -17,6 +17,9 @@ for crd in \
   k8snoprivilegedcontainers.constraints.gatekeeper.sh \
   k8spinnedimages.constraints.gatekeeper.sh; do
   kubectl --context "${kube_context}" wait \
+    --for=create "crd/${crd}" \
+    --timeout=120s
+  kubectl --context "${kube_context}" wait \
     --for=condition=Established "crd/${crd}" \
     --timeout=120s
 done
