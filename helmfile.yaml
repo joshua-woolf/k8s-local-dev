@@ -61,6 +61,16 @@ releases:
     values:
       - values/kube-state-metrics.yaml
 
+  - name: prometheus-node-exporter
+    namespace: observability
+    createNamespace: true
+    chart: prometheus-community/prometheus-node-exporter
+    version: 4.56.1
+    labels:
+      profile: core
+    values:
+      - values/node-exporter.yaml
+
   - name: cloudnative-pg
     namespace: cnpg-system
     createNamespace: true

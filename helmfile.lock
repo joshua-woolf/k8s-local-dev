@@ -15,11 +15,14 @@ dependencies:
   - name: kube-state-metrics
     repository: https://prometheus-community.github.io/helm-charts
     version: 8.0.0
+  - name: prometheus-node-exporter
+    repository: https://prometheus-community.github.io/helm-charts
+    version: 4.56.1
   - name: strimzi-kafka-operator
     repository: https://strimzi.io/charts/
     version: 1.1.0
   - name: traefik
     repository: https://traefik.github.io/charts
     version: 41.0.2
-digest: sha256:e51dd3181a6d4d01aa3cdc55610506935c3eac857248af5aed1cf0b7bbee4e9f
-generated: "2026-07-22T19:09:47.806963+02:00"
+digest: sha256:6a5174627af9f2929b0cf92e54d2e36afd19e71d24823784ee067f673331700f
+generated: "2026-07-22T20:01:13.247107+02:00"

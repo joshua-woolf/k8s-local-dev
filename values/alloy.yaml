@@ -77,6 +77,11 @@ alloy:
           regex         = "true"
         }
         rule {
+          source_labels = ["__meta_kubernetes_pod_container_port_number"]
+          target_label  = "__meta_kubernetes_pod_annotation_prometheus_io_port"
+          action        = "keepequal"
+        }
+        rule {
           source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scheme"]
           target_label  = "__scheme__"
           regex         = "(https?)"
@@ -108,6 +113,23 @@ alloy:
         rule {
           source_labels = ["__meta_kubernetes_pod_node_name"]
           target_label  = "node"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "kubernetes_pod_name"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_node_name"]
+          target_label  = "node_name"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_ip"]
+          target_label  = "node_ip"
+        }
+        rule {
+          action      = "labelmap"
+          regex       = "__meta_kubernetes_pod_label_(strimzi_io_.+)"
+          replacement = "$1"
         }
         rule {
           source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
@@ -222,6 +244,10 @@ alloy:
       }
 
       prometheus.remote_write "lgtm" {
+        external_labels = {
+          cluster = "local-dev",
+        }
+
         endpoint {
           url = "http://otel-lgtm.observability.svc.cluster.local:9090/api/v1/write"
         }
