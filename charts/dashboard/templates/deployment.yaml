@@ -5,7 +5,7 @@ metadata:
     {{- include "dashboard.labels" . | nindent 4 }}
   name: dashboard
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app.kubernetes.io/instance: {{ .Release.Name }}
@@ -18,12 +18,16 @@ spec:
       containers:
         - env:
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4318
-          image: registry.local.dev:5001/dashboard:{{ .Values.imageTag }}
-          imagePullPolicy: IfNotPresent
+              value: {{ .Values.otelEndpoint | quote }}
+            - name: OTEL_SERVICE_NAME
+              value: dashboard
+            - name: NODE_ENV
+              value: production
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           livenessProbe:
             httpGet:
-              path: /
+              path: /healthz
               port: http
           name: dashboard
           ports:
@@ -32,7 +36,7 @@ spec:
               protocol: TCP
           readinessProbe:
             httpGet:
-              path: /
+              path: /readyz
               port: http
           securityContext:
             allowPrivilegeEscalation: false
@@ -43,6 +47,8 @@ spec:
             runAsGroup: 10001
             runAsNonRoot: true
             runAsUser: 10001
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
       nodeSelector:
         kubernetes.io/os: linux
       securityContext:

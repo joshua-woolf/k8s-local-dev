@@ -7,7 +7,8 @@ export default defineConfig({
     timeout: 5000,
   },
   use: {
-    baseURL: process.env.BASE_URL || 'https://dashboard.local.dev',
+    baseURL: process.env.BASE_URL || 'https://dashboard.k8s.localhost',
+    channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },

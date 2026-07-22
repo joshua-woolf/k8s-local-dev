@@ -10,30 +10,22 @@ class ErrorResponse extends Error {
 }
 
 const errorHandler = (err, _req, res, _next) => {
-  const tracer = trace.getTracer('dashboard')
-  const span = tracer.startSpan('error_handler')
+  const statusCode = err.statusCode || 500
+  const span = trace.getActiveSpan()
+  span?.recordException(err)
+  span?.setStatus({
+    code: SpanStatusCode.ERROR,
+    message: err.message,
+  })
 
-  try {
-    const error = {
-      status: err.status || 'error',
-      message: err.message || 'Internal Server Error',
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
-    }
-
-    span.setAttribute('error', true)
-    span.setAttribute('error.type', err.name)
-    span.setAttribute('error.message', err.message)
-    span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: err.message,
-    })
-
-    const statusCode = err.statusCode || 500
-    res.status(statusCode).json(error)
+  const error = {
+    status: err.status || 'error',
+    message: statusCode >= 500 && process.env.NODE_ENV !== 'development'
+      ? 'Internal Server Error'
+      : err.message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   }
-  finally {
-    span.end()
-  }
+  res.status(statusCode).json(error)
 }
 
 export { errorHandler, ErrorResponse }

@@ -1,43 +1,40 @@
-import { setupTelemetry } from './tracing.js'
 import express from 'express'
-import cors from 'cors'
-import path, { dirname } from 'path'
-import { fileURLToPath } from 'url'
-import { routesController } from './controllers/routes.js'
+import path, { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { servicesController } from './controllers/services.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { requestLogger } from './middleware/requestLogger.js'
-import { trace, SpanStatusCode } from '@opentelemetry/api'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-setupTelemetry()
-
 class DashboardServer {
-  constructor() {
+  constructor({ controller = servicesController } = {}) {
     this.app = express()
-    this.port = process.env.PORT || 3000
+    this.port = Number.parseInt(process.env.PORT || '3000', 10)
+    this.controller = controller
     this.setupMiddleware()
     this.setupRoutes()
     this.setupErrorHandling()
   }
 
   setupMiddleware() {
-    this.app.use(cors({
-      origin: process.env.CORS_ORIGIN || '*',
-      methods: ['GET', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-    }))
-
-    this.app.use(express.static(path.join(__dirname, 'public')))
-
     this.app.use(requestLogger)
+    this.app.use((_req, res, next) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff')
+      res.setHeader('X-Frame-Options', 'DENY')
+      res.setHeader('Referrer-Policy', 'no-referrer')
+      res.setHeader('Content-Security-Policy', "default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self'")
+      next()
+    })
+    this.app.use(express.static(path.join(__dirname, 'public')))
   }
 
   setupRoutes() {
-    this.app.get('/api/routes', routesController)
-
-    this.app.get('*', (_req, res) => {
+    this.app.get('/healthz', (_req, res) => res.json({ status: 'ok' }))
+    this.app.get('/readyz', (_req, res) => res.json({ status: 'ready' }))
+    this.app.get('/api/services', this.controller)
+    this.app.use((_req, res) => {
       res.sendFile(path.join(__dirname, 'public', 'index.html'))
     })
   }
@@ -47,78 +44,44 @@ class DashboardServer {
   }
 
   start() {
-    return new Promise((resolve, reject) => {
-      try {
-        const tracer = trace.getTracer('dashboard')
-        const span = tracer.startSpan('server_start')
-
-        const server = this.app.listen(this.port, () => {
-          span.setAttribute('port', this.port)
-          span.addEvent('server_started', {
-            attributes: {
-              port: this.port,
-            },
-          })
-          span.setStatus({ code: SpanStatusCode.OK })
-          span.end()
-          resolve(server)
-        })
-
-        process.on('SIGTERM', () => this.shutdown(server))
-        process.on('SIGINT', () => this.shutdown(server))
-      }
-      catch (error) {
-        reject(error)
-      }
+    return new Promise((resolve) => {
+      const httpServer = this.app.listen(this.port, () => {
+        console.log(JSON.stringify({ event: 'server_started', port: this.port }))
+        resolve(httpServer)
+      })
     })
   }
 
-  async shutdown(server) {
-    const tracer = trace.getTracer('dashboard')
-    const span = tracer.startSpan('server_shutdown')
-
-    try {
-      span.addEvent('shutting_down_server')
-      await new Promise(resolve => server.close(resolve))
-      span.addEvent('server_shutdown_complete')
-      span.setStatus({ code: SpanStatusCode.OK })
-      span.end()
-      process.exit(0)
-    }
-    catch (error) {
-      span.addEvent('server_shutdown_error', {
-        attributes: {
-          error: error.message,
-          stack: error.stack,
-        },
-      })
-      span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message: error.message,
-      })
-      span.end()
-      process.exit(1)
-    }
+  async shutdown(httpServer) {
+    await new Promise((resolve, reject) => {
+      httpServer.close(error => error ? reject(error) : resolve())
+    })
   }
 }
 
-const server = new DashboardServer()
+async function main() {
+  const dashboardServer = new DashboardServer()
+  const httpServer = await dashboardServer.start()
+  let stopping = false
 
-server.start().catch((error) => {
-  const tracer = trace.getTracer('dashboard')
-  const span = tracer.startSpan('server_start_error')
-  span.addEvent('failed_to_start_server', {
-    attributes: {
-      error: error.message,
-      stack: error.stack,
-    },
-  })
-  span.setStatus({
-    code: SpanStatusCode.ERROR,
-    message: error.message,
-  })
-  span.end()
-  process.exit(1)
-})
+  const stop = async (signal) => {
+    if (stopping) return
+    stopping = true
+    console.log(JSON.stringify({ event: 'server_stopping', signal }))
+    await dashboardServer.shutdown(httpServer)
+    const { shutdownTelemetry } = await import('./tracing.js')
+    await shutdownTelemetry()
+  }
 
-export { DashboardServer }
+  process.once('SIGTERM', () => stop('SIGTERM').catch(error => console.error(error)))
+  process.once('SIGINT', () => stop('SIGINT').catch(error => console.error(error)))
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+  main().catch((error) => {
+    console.error(error)
+    process.exitCode = 1
+  })
+}
+
+export { DashboardServer, main }

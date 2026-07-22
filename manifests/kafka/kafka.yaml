@@ -31,11 +31,6 @@ kind: Kafka
 metadata:
   name: kafka
   namespace: data
-  annotations:
-    localdev.dashboard/enabled: "true"
-    localdev.dashboard/name: Kafka
-    localdev.dashboard/category: Data
-    localdev.dashboard/description: Single-node KRaft Kafka broker
 spec:
   kafka:
     version: 4.3.0
@@ -63,3 +58,14 @@ spec:
       transaction.state.log.min.isr: 1
       default.replication.factor: 1
       min.insync.replicas: 1
+    template:
+      externalBootstrapService:
+        metadata:
+          annotations:
+            localdev.dashboard/enabled: "true"
+            localdev.dashboard/name: Kafka
+            localdev.dashboard/category: Data
+            localdev.dashboard/description: Single-node KRaft Kafka broker
+            localdev.dashboard/host: kafka.k8s.localhost
+            localdev.dashboard/port: "9094"
+            localdev.dashboard/protocol: kafka

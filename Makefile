@@ -6,8 +6,10 @@ CLUSTER_NAME ?= local-dev
 KUBE_CONTEXT ?= kind-$(CLUSTER_NAME)
 IMAGE ?=
 CONFIRM ?=
+DASHBOARD_IMAGE ?= local/dashboard
+DASHBOARD_TAG ?= dev
 
-.PHONY: help doctor cluster helm-core helm-full require-ca tls trust untrust core-resources full-resources up-core up status ports load reset
+.PHONY: help doctor cluster helm-core helm-full require-ca tls trust untrust core-resources full-resources dashboard-image dashboard up-core up status ports load test smoke reset
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "; printf "Usage: make <target>\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -66,10 +68,21 @@ full-resources: core-resources ## Reconcile ClickHouse and Kafka resources
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/kafka/
 	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-policies.sh
 
-up-core: doctor require-ca cluster helm-core tls core-resources ## Create the lightweight local cluster
+dashboard-image: cluster ## Build and load the dashboard image into Kind
+	docker build --tag "$(DASHBOARD_IMAGE):$(DASHBOARD_TAG)" --file src/dashboard/server.Dockerfile src/dashboard
+	kind load docker-image "$(DASHBOARD_IMAGE):$(DASHBOARD_TAG)" --name "$(CLUSTER_NAME)"
+
+dashboard: dashboard-image ## Install or refresh the dashboard
+	helm upgrade dashboard charts/dashboard --install --atomic --create-namespace --namespace dashboard --timeout 5m --wait \
+		--set-string image.repository="$(DASHBOARD_IMAGE)" \
+		--set-string image.tag="$(DASHBOARD_TAG)"
+	@kubectl --context "$(KUBE_CONTEXT)" --namespace dashboard rollout restart deployment/dashboard
+	@kubectl --context "$(KUBE_CONTEXT)" --namespace dashboard rollout status deployment/dashboard --timeout=180s
+
+up-core: doctor require-ca cluster helm-core tls core-resources dashboard ## Create the lightweight local cluster
 	@$(MAKE) --no-print-directory status
 
-up: doctor require-ca cluster helm-full tls full-resources ## Create the complete local cluster
+up: doctor require-ca cluster helm-full tls full-resources dashboard ## Create the complete local cluster
 	@$(MAKE) --no-print-directory status
 
 status: ## Show cluster nodes, releases, pods, and ingresses
@@ -86,6 +99,12 @@ ports: ## Print host access details for data services
 load: ## Load IMAGE into the Kind cluster
 	@test -n "$(IMAGE)" || { echo "Usage: make load IMAGE=example/app:dev"; exit 1; }
 	kind load docker-image "$(IMAGE)" --name "$(CLUSTER_NAME)"
+
+test: ## Run dashboard lint and unit tests
+	cd src/dashboard && npm_config_cache="$(CURDIR)/.state/npm-cache" npm ci && npm run lint && npm test
+
+smoke: require-ca ## Run the browser smoke test against the cluster
+	cd src/dashboard && NODE_EXTRA_CA_CERTS="$(CURDIR)/.state/mkcert/rootCA.pem" npm run test:smoke
 
 reset: ## Delete the cluster and all local cluster data (requires CONFIRM=1)
 	@test "$(CONFIRM)" = "1" || { echo "This deletes the cluster and every PVC. Re-run as: make reset CONFIRM=1"; exit 1; }
