@@ -3,6 +3,12 @@ repositories:
     url: https://traefik.github.io/charts
   - name: jetstack
     url: https://charts.jetstack.io
+  - name: grafana
+    url: https://grafana.github.io/helm-charts
+  - name: cnpg
+    url: https://cloudnative-pg.github.io/charts
+  - name: strimzi
+    url: https://strimzi.io/charts/
 
 helmDefaults:
   atomic: true
@@ -30,3 +36,33 @@ releases:
       profile: core
     values:
       - values/cert-manager.yaml
+
+  - name: alloy
+    namespace: observability
+    createNamespace: true
+    chart: grafana/alloy
+    version: 1.10.1
+    labels:
+      profile: core
+    values:
+      - values/alloy.yaml
+
+  - name: cloudnative-pg
+    namespace: cnpg-system
+    createNamespace: true
+    chart: cnpg/cloudnative-pg
+    version: 0.29.0
+    labels:
+      profile: core
+    values:
+      - values/cloudnative-pg.yaml
+
+  - name: strimzi
+    namespace: kafka-system
+    createNamespace: true
+    chart: strimzi/strimzi-kafka-operator
+    version: 1.1.0
+    labels:
+      profile: full
+    values:
+      - values/strimzi.yaml

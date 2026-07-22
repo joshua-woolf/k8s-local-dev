@@ -1,0 +1,65 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: dual-role
+  namespace: data
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  replicas: 1
+  roles:
+    - controller
+    - broker
+  resources:
+    requests:
+      cpu: 200m
+      memory: 768Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 5Gi
+        deleteClaim: true
+        kraftMetadata: shared
+---
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: kafka
+  namespace: data
+  annotations:
+    localdev.dashboard/enabled: "true"
+    localdev.dashboard/name: Kafka
+    localdev.dashboard/category: Data
+    localdev.dashboard/description: Single-node KRaft Kafka broker
+spec:
+  kafka:
+    version: 4.3.0
+    metadataVersion: 4.3-IV0
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      - name: external
+        port: 9094
+        type: nodeport
+        tls: false
+        configuration:
+          bootstrap:
+            nodePort: 30094
+          brokers:
+            - broker: 0
+              nodePort: 30095
+              advertisedHost: kafka.k8s.localhost
+              advertisedPort: 9095
+    config:
+      offsets.topic.replication.factor: 1
+      transaction.state.log.replication.factor: 1
+      transaction.state.log.min.isr: 1
+      default.replication.factor: 1
+      min.insync.replicas: 1

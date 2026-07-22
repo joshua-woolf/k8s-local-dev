@@ -7,7 +7,7 @@ KUBE_CONTEXT ?= kind-$(CLUSTER_NAME)
 IMAGE ?=
 CONFIRM ?=
 
-.PHONY: help doctor cluster helm-core helm-full require-ca tls trust untrust up-core up status load reset
+.PHONY: help doctor cluster helm-core helm-full require-ca tls trust untrust core-resources full-resources up-core up status ports load reset
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "; printf "Usage: make <target>\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -55,10 +55,20 @@ trust: ## Generate and trust the dedicated local development CA
 untrust: ## Remove this repository's CA from the host trust stores
 	@./scripts/untrust-ca.sh
 
-up-core: doctor require-ca cluster helm-core tls ## Create the lightweight local cluster
+core-resources: ## Reconcile observability and Postgres resources
+	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/namespaces.yaml
+	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/observability/
+	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/postgres/
+
+full-resources: core-resources ## Reconcile ClickHouse and Kafka resources
+	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-data-secrets.sh
+	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/clickhouse/
+	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/kafka/
+
+up-core: doctor require-ca cluster helm-core tls core-resources ## Create the lightweight local cluster
 	@$(MAKE) --no-print-directory status
 
-up: doctor require-ca cluster helm-full tls ## Create the complete local cluster
+up: doctor require-ca cluster helm-full tls full-resources ## Create the complete local cluster
 	@$(MAKE) --no-print-directory status
 
 status: ## Show cluster nodes, releases, pods, and ingresses
@@ -66,6 +76,11 @@ status: ## Show cluster nodes, releases, pods, and ingresses
 	@helm list --all-namespaces
 	@kubectl --context "$(KUBE_CONTEXT)" get pods --all-namespaces
 	@kubectl --context "$(KUBE_CONTEXT)" get ingress --all-namespaces 2>/dev/null || true
+
+ports: ## Print host access details for data services
+	@echo "Postgres:   kubectl --context $(KUBE_CONTEXT) -n data port-forward service/postgres-rw 5432:5432"
+	@echo "ClickHouse: kubectl --context $(KUBE_CONTEXT) -n data port-forward service/clickhouse 8123:8123"
+	@echo "Kafka:      kafka.k8s.localhost:9094 (broker metadata uses port 9095)"
 
 load: ## Load IMAGE into the Kind cluster
 	@test -n "$(IMAGE)" || { echo "Usage: make load IMAGE=example/app:dev"; exit 1; }
