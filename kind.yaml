@@ -29,3 +29,7 @@ nodes:
         hostPort: 9000
         listenAddress: 127.0.0.1
         protocol: TCP
+      - containerPort: 30379
+        hostPort: 6379
+        listenAddress: 127.0.0.1
+        protocol: TCP

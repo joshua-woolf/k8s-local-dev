@@ -30,7 +30,7 @@ cluster: ## Create the Kind cluster if it does not exist
 	@if kind get clusters 2>/dev/null | grep -qx "$(CLUSTER_NAME)"; then \
 		echo "Kind cluster $(CLUSTER_NAME) already exists"; \
 		stale=0; \
-		for mapping in "30080 80" "30443 443" "30543 5432" "30123 8123" "30900 9000" "30094 9094"; do \
+		for mapping in "30080 80" "30443 443" "30543 5432" "30123 8123" "30900 9000" "30094 9094" "30379 6379"; do \
 			container_port="$${mapping%% *}"; \
 			host_port="$${mapping##* }"; \
 			if ! docker port "$(CLUSTER_NAME)-control-plane" "$${container_port}/tcp" 2>/dev/null | grep -Eq "127\\.0\\.0\\.1:$${host_port}$$"; then \
@@ -76,9 +76,10 @@ core-resources: ## Reconcile observability, Postgres, and pgAdmin resources
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/observability/
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/postgres/
 
-full-resources: core-resources ## Reconcile ClickHouse, Kafka, and Kafbat resources
+full-resources: core-resources ## Reconcile ClickHouse, Kafka, Kafbat, and Valkey resources
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/clickhouse/
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/kafka/
+	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/valkey/
 	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-policies.sh
 
 dashboard-image: cluster ## Build and load the dashboard image into Kind
@@ -110,6 +111,7 @@ ports: ## Print host access details for data services
 	@echo "ClickHouse HTTP:  https://clickhouse.k8s.localhost or http://clickhouse.k8s.localhost:8123"
 	@echo "ClickHouse native: clickhouse.k8s.localhost:9000"
 	@echo "Kafka:            kafka.k8s.localhost:9094"
+	@echo "Valkey:           valkey.k8s.localhost:6379"
 
 credentials: ## Print local data-tool and database credentials
 	@echo "pgAdmin email:       admin@local.dev"
@@ -118,6 +120,8 @@ credentials: ## Print local data-tool and database credentials
 	@printf "PostgreSQL password: "; kubectl --context "$(KUBE_CONTEXT)" --namespace data get secret postgres-app --output=jsonpath='{.data.password}' | base64 --decode; echo
 	@printf "ClickHouse username: "; kubectl --context "$(KUBE_CONTEXT)" --namespace data get secret clickhouse-credentials --output=jsonpath='{.data.username}' | base64 --decode; echo
 	@printf "ClickHouse password: "; kubectl --context "$(KUBE_CONTEXT)" --namespace data get secret clickhouse-credentials --output=jsonpath='{.data.password}' | base64 --decode; echo
+	@echo "Valkey username:      default"
+	@printf "Valkey password:      "; kubectl --context "$(KUBE_CONTEXT)" --namespace data get secret valkey-credentials --output=jsonpath='{.data.password}' | base64 --decode; echo
 
 load: ## Load IMAGE into the Kind cluster
 	@test -n "$(IMAGE)" || { echo "Usage: make load IMAGE=example/app:dev"; exit 1; }

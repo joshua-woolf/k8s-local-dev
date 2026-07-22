@@ -64,6 +64,13 @@ ports:
     exposedPort: 9000
     nodePort: 30900
     protocol: TCP
+  valkey:
+    port: 6379
+    expose:
+      default: true
+    exposedPort: 6379
+    nodePort: 30379
+    protocol: TCP
 
 service:
   spec:

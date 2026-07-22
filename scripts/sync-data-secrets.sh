@@ -24,3 +24,14 @@ else
 
   echo "Generated pgAdmin credentials in secret data/pgadmin-credentials"
 fi
+
+if kubectl --context "${kube_context}" --namespace data get secret valkey-credentials >/dev/null 2>&1; then
+  echo "Valkey credentials already exist"
+else
+  valkey_password="$(openssl rand -hex 16)"
+  kubectl --context "${kube_context}" --namespace data create secret generic valkey-credentials \
+    --from-literal=username=default \
+    --from-literal="password=${valkey_password}"
+
+  echo "Generated Valkey credentials in secret data/valkey-credentials"
+fi
