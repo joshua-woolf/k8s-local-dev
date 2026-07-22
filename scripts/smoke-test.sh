@@ -15,16 +15,20 @@ kubectl --context "${kube_context}" --namespace data rollout status statefulset/
 kubectl --context "${kube_context}" --namespace data wait --for=condition=Ready cluster/postgres --timeout=300s
 kubectl --context "${kube_context}" --namespace data wait --for=condition=Ready kafka/kafka --timeout=420s
 kubectl --context "${kube_context}" --namespace data rollout status deployment/kafbat --timeout=300s
+kubectl --context "${kube_context}" --namespace data rollout status statefulset/valkey --timeout=300s
+kubectl --context "${kube_context}" --namespace data rollout status deployment/valkey-admin --timeout=300s
 kubectl --context "${kube_context}" --namespace dashboard wait --for=condition=Ready certificate/dashboard-tls --timeout=180s
 kubectl --context "${kube_context}" --namespace observability wait --for=condition=Ready certificate/grafana-tls --timeout=180s
 kubectl --context "${kube_context}" --namespace data wait --for=condition=Ready certificate/pgadmin-tls --timeout=180s
 kubectl --context "${kube_context}" --namespace data wait --for=condition=Ready certificate/kafbat-tls --timeout=180s
 kubectl --context "${kube_context}" --namespace data wait --for=condition=Ready certificate/clickhouse-http-tls --timeout=180s
+kubectl --context "${kube_context}" --namespace data wait --for=condition=Ready certificate/valkey-admin-tls --timeout=180s
 
 curl --fail --silent --show-error --cacert "${ca_file}" https://dashboard.k8s.localhost/healthz >/dev/null
 curl --fail --silent --show-error --cacert "${ca_file}" https://grafana.k8s.localhost/api/health >/dev/null
 curl --fail --silent --show-error --cacert "${ca_file}" https://pgadmin.k8s.localhost/misc/ping >/dev/null
 curl --fail --silent --show-error --cacert "${ca_file}" https://kafbat.k8s.localhost/actuator/health >/dev/null
+curl --fail --silent --show-error --cacert "${ca_file}" https://valkey-ui.k8s.localhost/ >/dev/null
 test "$(curl --fail --silent --show-error --cacert "${ca_file}" \
   https://kafbat.k8s.localhost/api/clusters | jq --raw-output '.[0].status')" = "ONLINE"
 
@@ -62,11 +66,19 @@ kafka_result="$(kubectl --context "${kube_context}" --namespace data exec "${kaf
   --topic localdev-smoke --from-beginning --max-messages 1 --timeout-ms 10000 2>/dev/null)"
 test "${kafka_result}" = "localdev-smoke"
 
+valkey_password="$(kubectl --context "${kube_context}" --namespace data get secret valkey-credentials --output=jsonpath='{.data.password}' | base64 --decode)"
+kubectl --context "${kube_context}" --namespace data exec statefulset/valkey -- \
+  env "VALKEYCLI_AUTH=${valkey_password}" valkey-cli SET localdev-smoke ready >/dev/null
+valkey_result="$(kubectl --context "${kube_context}" --namespace data exec statefulset/valkey -- \
+  env "VALKEYCLI_AUTH=${valkey_password}" valkey-cli GET localdev-smoke)"
+test "${valkey_result}" = "ready"
+
 for endpoint in \
   postgres.k8s.localhost:5432 \
   clickhouse.k8s.localhost:8123 \
   clickhouse.k8s.localhost:9000 \
-  kafka.k8s.localhost:9094; do
+  kafka.k8s.localhost:9094 \
+  valkey.k8s.localhost:6379; do
   host="${endpoint%:*}"
   port="${endpoint##*:}"
   nc -z -w 5 "${host}" "${port}"

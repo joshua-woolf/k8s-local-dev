@@ -18,6 +18,7 @@ test('dashboard shows data tools and host database endpoints', async ({ page }) 
     'https://pgadmin.k8s.localhost',
     'https://kafbat.k8s.localhost',
     'https://clickhouse.k8s.localhost',
+    'https://valkey-ui.k8s.localhost',
   ]) {
     await expect(page.getByRole('link', { name: url })).toBeVisible()
   }
@@ -26,6 +27,7 @@ test('dashboard shows data tools and host database endpoints', async ({ page }) 
     'postgres.k8s.localhost:5432',
     'clickhouse.k8s.localhost:9000',
     'kafka.k8s.localhost:9094',
+    'valkey.k8s.localhost:6379',
   ]) {
     await expect(page.getByText(endpoint, { exact: true })).toBeVisible()
   }

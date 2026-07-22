@@ -22,6 +22,8 @@ The full profile additionally contains:
 - A single-node ClickHouse StatefulSet
 - A single combined Strimzi KRaft controller/broker
 - Kafbat UI connected to the local Kafka broker
+- A persistent single-node Valkey instance
+- Valkey Admin connected to the local Valkey instance
 - Gatekeeper with warning-only policies for application namespaces
 
 This is a disposable development environment. It is not a production topology:
@@ -39,10 +41,12 @@ changes to macOS network configuration:
 | Grafana | `https://grafana.k8s.localhost` |
 | pgAdmin | `https://pgadmin.k8s.localhost` |
 | Kafbat UI | `https://kafbat.k8s.localhost` |
+| Valkey Admin | `https://valkey-ui.k8s.localhost` |
 | PostgreSQL | `postgres.k8s.localhost:5432` |
 | ClickHouse HTTP | `https://clickhouse.k8s.localhost` or `clickhouse.k8s.localhost:8123` |
 | ClickHouse native | `clickhouse.k8s.localhost:9000` |
 | Kafka | `kafka.k8s.localhost:9094` |
+| Valkey | `valkey.k8s.localhost:6379` |
 
 Kind maps every listed port to a fixed Traefik NodePort. Traefik uses normal
 HTTP routing for the web applications and dedicated TCP entrypoints for each
@@ -109,7 +113,7 @@ This deletes every PVC in that local cluster.
 | `make dashboard` | Rebuild, load, and redeploy the dashboard |
 | `make load IMAGE=example/app:dev` | Load another local image into Kind |
 | `make ports` | Print data-service host endpoints |
-| `make credentials` | Print generated pgAdmin and database credentials |
+| `make credentials` | Print generated UI and data-service credentials |
 | `make status` | Show nodes, Helm releases, pods, and ingresses |
 | `make test` | Run dashboard lint and unit tests |
 | `make validate` | Render and schema-check every deployment input |
@@ -148,7 +152,7 @@ Node clients do not always consult the macOS trust store. For a Node process,
 set `NODE_EXTRA_CA_CERTS="$PWD/.state/mkcert/rootCA.pem"`.
 
 cert-manager certificates cover the HTTPS endpoints on port 443. The dedicated
-TCP entrypoints on 5432, 8123, 9000, and 9094 are passed through to their
+TCP entrypoints on 5432, 6379, 8123, 9000, and 9094 are passed through to their
 services and are not TLS-terminated by cert-manager. They remain loopback-only.
 
 ## Dashboard discovery
@@ -196,11 +200,15 @@ pgAdmin uses the generated login at `https://pgadmin.k8s.localhost`. The
 `Local PostgreSQL` server is preloaded with the `app` database and retrieves its
 password from CloudNativePG's `postgres-app` Secret. Kafbat requires no login in
 this loopback-only setup and connects to Kafka through the internal listener.
+Valkey Admin requires no separate UI login and receives its preconfigured
+connection from the generated `valkey-credentials` Secret.
 
 PostgreSQL clients connect to `postgres.k8s.localhost:5432`. ClickHouse clients
 can use HTTPS on port 443, plain HTTP on 8123, or the native protocol on 9000.
 Kafka clients use `kafka.k8s.localhost:9094`; the single broker advertises that
-same endpoint.
+same endpoint. Valkey clients use `valkey.k8s.localhost:6379`, the `default`
+user, and the generated password printed by `make credentials`. The raw Valkey
+connection is not TLS-encrypted and is deliberately bound to loopback only.
 
 Deleting the Kind cluster deletes all PVC data. Keep schema migrations and seed
 steps reproducible rather than treating this cluster as a backup.
@@ -227,7 +235,7 @@ kubectl get certificate,certificaterequest -A
 kubectl get events -A --sort-by=.lastTimestamp
 ```
 
-If ports 80, 443, 5432, 8123, 9000, or 9094 are occupied, Kind cannot create
+If ports 80, 443, 5432, 6379, 8123, 9000, or 9094 are occupied, Kind cannot create
 the node. Stop the conflicting process before retrying.
 
 If an older checkout of this repository is still running, use that checkout's
