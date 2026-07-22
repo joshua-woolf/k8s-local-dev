@@ -64,6 +64,7 @@ full-resources: core-resources ## Reconcile ClickHouse and Kafka resources
 	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-data-secrets.sh
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/clickhouse/
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/kafka/
+	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-policies.sh
 
 up-core: doctor require-ca cluster helm-core tls core-resources ## Create the lightweight local cluster
 	@$(MAKE) --no-print-directory status

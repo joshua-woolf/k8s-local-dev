@@ -9,6 +9,8 @@ repositories:
     url: https://cloudnative-pg.github.io/charts
   - name: strimzi
     url: https://strimzi.io/charts/
+  - name: gatekeeper
+    url: https://open-policy-agent.github.io/gatekeeper/charts
 
 helmDefaults:
   atomic: true
@@ -66,3 +68,13 @@ releases:
       profile: full
     values:
       - values/strimzi.yaml
+
+  - name: gatekeeper
+    namespace: gatekeeper-system
+    createNamespace: true
+    chart: gatekeeper/gatekeeper
+    version: 3.23.0
+    labels:
+      profile: full
+    values:
+      - values/gatekeeper.yaml

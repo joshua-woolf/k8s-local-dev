@@ -1,0 +1,34 @@
+replicas: 1
+auditInterval: 60
+validatingWebhookFailurePolicy: Ignore
+
+pdb:
+  controllerManager:
+    minAvailable: 0
+
+controllerManager:
+  exemptNamespacePrefixes:
+    - kube-
+  exemptNamespaces:
+    - cert-manager
+    - cnpg-system
+    - gatekeeper-system
+    - kafka-system
+    - observability
+    - traefik
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 384Mi
+
+audit:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 384Mi
