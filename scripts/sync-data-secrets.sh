@@ -20,7 +20,6 @@ if kubectl --context "${kube_context}" --namespace data get secret pgadmin-crede
 else
   pgadmin_password="$(openssl rand -hex 16)"
   kubectl --context "${kube_context}" --namespace data create secret generic pgadmin-credentials \
-    --from-literal=email=admin@k8s.localhost \
     --from-literal="password=${pgadmin_password}"
 
   echo "Generated pgAdmin credentials in secret data/pgadmin-credentials"
