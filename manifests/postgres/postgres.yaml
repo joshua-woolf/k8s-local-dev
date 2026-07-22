@@ -12,6 +12,9 @@ spec:
       localdev.dashboard/name: PostgreSQL
       localdev.dashboard/category: Data
       localdev.dashboard/description: Single-node PostgreSQL development database
+      localdev.dashboard/host: postgres.k8s.localhost
+      localdev.dashboard/port: "5432"
+      localdev.dashboard/protocol: postgresql
   bootstrap:
     initdb:
       database: app

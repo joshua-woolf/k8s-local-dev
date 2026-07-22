@@ -12,7 +12,7 @@ gatewayClass:
 
 providers:
   kubernetesCRD:
-    enabled: false
+    enabled: true
   kubernetesGateway:
     enabled: false
   kubernetesIngress:
@@ -36,6 +36,34 @@ ports:
           permanent: true
   websecure:
     nodePort: 30443
+  kafka:
+    port: 9094
+    expose:
+      default: true
+    exposedPort: 9094
+    nodePort: 30094
+    protocol: TCP
+  postgresql:
+    port: 5432
+    expose:
+      default: true
+    exposedPort: 5432
+    nodePort: 30543
+    protocol: TCP
+  clickhouse-http:
+    port: 8123
+    expose:
+      default: true
+    exposedPort: 8123
+    nodePort: 30123
+    protocol: TCP
+  clickhouse-native:
+    port: 9000
+    expose:
+      default: true
+    exposedPort: 9000
+    nodePort: 30900
+    protocol: TCP
 
 service:
   spec:

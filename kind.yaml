@@ -17,7 +17,15 @@ nodes:
         hostPort: 9094
         listenAddress: 127.0.0.1
         protocol: TCP
-      - containerPort: 30095
-        hostPort: 9095
+      - containerPort: 30543
+        hostPort: 5432
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      - containerPort: 30123
+        hostPort: 8123
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      - containerPort: 30900
+        hostPort: 9000
         listenAddress: 127.0.0.1
         protocol: TCP
