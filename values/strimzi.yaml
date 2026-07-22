@@ -1,6 +1,11 @@
 replicas: 1
 watchAnyNamespace: true
 
+annotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: /metrics
+
 podDisruptionBudget:
   enabled: false
 

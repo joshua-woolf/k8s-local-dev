@@ -34,6 +34,10 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: valkey
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9121"
+        prometheus.io/path: /metrics
     spec:
       securityContext:
         fsGroup: 1000
@@ -86,6 +90,53 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+        - name: valkey-exporter
+          image: docker.io/oliver006/redis_exporter:v1.87.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: REDIS_ADDR
+              value: redis://127.0.0.1:6379
+            - name: REDIS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: valkey-credentials
+                  key: username
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: valkey-credentials
+                  key: password
+          ports:
+            - name: metrics
+              containerPort: 9121
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 59000
+            runAsNonRoot: true
+            runAsUser: 59000
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
   volumeClaimTemplates:
     - metadata:
         name: data

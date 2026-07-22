@@ -2,6 +2,11 @@ replicas: 1
 auditInterval: 60
 validatingWebhookFailurePolicy: Ignore
 
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8888"
+  prometheus.io/path: /metrics
+
 pdb:
   controllerManager:
     minAvailable: 0

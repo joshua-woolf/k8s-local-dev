@@ -8,6 +8,9 @@ spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:18-minimal-trixie
   inheritedMetadata:
     annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: /metrics
       localdev.dashboard/enabled: "true"
       localdev.dashboard/name: PostgreSQL
       localdev.dashboard/category: Data

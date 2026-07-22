@@ -11,6 +11,8 @@ repositories:
     url: https://strimzi.io/charts/
   - name: gatekeeper
     url: https://open-policy-agent.github.io/gatekeeper/charts
+  - name: prometheus-community
+    url: https://prometheus-community.github.io/helm-charts
 
 helmDefaults:
   atomic: true
@@ -48,6 +50,16 @@ releases:
       profile: core
     values:
       - values/alloy.yaml
+
+  - name: kube-state-metrics
+    namespace: observability
+    createNamespace: true
+    chart: prometheus-community/kube-state-metrics
+    version: 8.0.0
+    labels:
+      profile: core
+    values:
+      - values/kube-state-metrics.yaml
 
   - name: cloudnative-pg
     namespace: cnpg-system

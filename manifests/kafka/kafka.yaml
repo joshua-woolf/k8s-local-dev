@@ -1,3 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-metrics
+  namespace: data
+data:
+  kafka-metrics-config.yml: |
+    lowercaseOutputName: true
+    rules:
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*, (.+)=(.+)><>Count
+        name: kafka_$1_$2_$3_total
+        type: COUNTER
+        labels:
+          "$4": "$5"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*><>Count
+        name: kafka_$1_$2_$3_total
+        type: COUNTER
+      - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+)><>Value
+        name: kafka_$1_$2_$3
+        type: GAUGE
+        labels:
+          "$4": "$5"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)><>Value
+        name: kafka_$1_$2_$3
+        type: GAUGE
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)><>Count
+        name: kafka_$1_$2_$3_count
+        type: COUNTER
+      - pattern: "kafka.server<type=raft-metrics><>(.+-total|.+-max):"
+        name: kafka_server_raftmetrics_$1
+        type: COUNTER
+      - pattern: "kafka.server<type=raft-metrics><>(.+):"
+        name: kafka_server_raftmetrics_$1
+        type: GAUGE
+---
 apiVersion: kafka.strimzi.io/v1
 kind: KafkaNodePool
 metadata:
@@ -58,7 +93,19 @@ spec:
       transaction.state.log.min.isr: 1
       default.replication.factor: 1
       min.insync.replicas: 1
+    metricsConfig:
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: kafka-metrics
+          key: kafka-metrics-config.yml
     template:
+      pod:
+        metadata:
+          annotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "9404"
+            prometheus.io/path: /metrics
       externalBootstrapService:
         metadata:
           annotations:

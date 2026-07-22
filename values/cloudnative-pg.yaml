@@ -6,6 +6,11 @@ config:
 monitoring:
   podMonitorEnabled: false
 
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: /metrics
+
 resources:
   requests:
     cpu: 50m
