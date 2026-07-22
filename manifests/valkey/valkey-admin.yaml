@@ -14,29 +14,29 @@ spec:
         app.kubernetes.io/name: valkey-admin
     spec:
       securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: valkey-admin
-          image: docker.io/valkey/valkey-admin:1.0.1
+          image: local/valkey-admin:1.0.1-local
           imagePullPolicy: IfNotPresent
           env:
             - name: DEPLOYMENT_MODE
               value: Web
-            - name: VALKEY_HOST
+            - name: LOCAL_VALKEY_HOST
               value: valkey.data.svc.cluster.local
-            - name: VALKEY_PORT
+            - name: LOCAL_VALKEY_PORT
               value: "6379"
-            - name: VALKEY_TLS
+            - name: LOCAL_VALKEY_TLS
               value: "false"
-            - name: VALKEY_AUTH_TYPE
-              value: password
-            - name: VALKEY_USERNAME
+            - name: LOCAL_VALKEY_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: valkey-credentials
                   key: username
-            - name: VALKEY_PASSWORD
+            - name: LOCAL_VALKEY_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: valkey-credentials
@@ -72,9 +72,14 @@ spec:
               cpu: "1"
               memory: 1Gi
           volumeMounts:
+            - name: metrics-data
+              mountPath: /app/apps/server/data
             - name: tmp
               mountPath: /tmp
       volumes:
+        - name: metrics-data
+          emptyDir:
+            sizeLimit: 512Mi
         - name: tmp
           emptyDir:
             sizeLimit: 16Mi

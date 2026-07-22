@@ -1,0 +1,34 @@
+diff --git a/apps/server/src/connection.ts b/apps/server/src/connection.ts
+index e102080..4472f16 100644
+--- a/apps/server/src/connection.ts
++++ b/apps/server/src/connection.ts
+@@ -104,6 +104,29 @@ async function connectToValkeyLocked(
+ ) {
+   const { clients, clusterNodesRegistry, metricsServerMap } = ctx
+ 
++  const localHost = process.env.LOCAL_VALKEY_HOST
++  const localPort = process.env.LOCAL_VALKEY_PORT
++  const useLocalCredentials =
++    localHost &&
++    localPort &&
++    payload.connectionDetails.host === localHost &&
++    String(payload.connectionDetails.port) === localPort &&
++    !payload.connectionDetails.password &&
++    payload.connectionDetails.authType !== "iam"
++
++  if (useLocalCredentials) {
++    payload = {
++      ...payload,
++      connectionDetails: {
++        ...payload.connectionDetails,
++        username: process.env.LOCAL_VALKEY_USERNAME,
++        password: process.env.LOCAL_VALKEY_PASSWORD,
++        tls: process.env.LOCAL_VALKEY_TLS === "true",
++        verifyTlsCertificate: process.env.LOCAL_VALKEY_VERIFY_CERT === "true",
++      },
++    }
++  }
++
+   const {
+     host, port, username, password, tls: useTLS,
+     verifyTlsCertificate, authType, awsRegion, awsReplicationGroupId,

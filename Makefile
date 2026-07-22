@@ -8,9 +8,11 @@ IMAGE ?=
 CONFIRM ?=
 DASHBOARD_IMAGE ?= local/dashboard
 DASHBOARD_TAG ?= dev
+VALKEY_ADMIN_IMAGE ?= local/valkey-admin
+VALKEY_ADMIN_TAG ?= 1.0.1-local
 PLAYWRIGHT_CHANNEL ?= chrome
 
-.PHONY: help doctor cluster helm-core helm-full require-ca tls trust untrust core-resources full-resources dashboard-image dashboard up-core up status ports credentials load test validate smoke reset
+.PHONY: help doctor cluster helm-core helm-full require-ca tls trust untrust core-resources valkey-admin-image full-resources dashboard-image dashboard up-core up status ports credentials load test validate smoke reset
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "; printf "Usage: make <target>\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -76,10 +78,16 @@ core-resources: ## Reconcile observability, Postgres, and pgAdmin resources
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/observability/
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/postgres/
 
-full-resources: core-resources ## Reconcile ClickHouse, Kafka, Kafbat, and Valkey resources
+valkey-admin-image: cluster ## Build and load Valkey Admin with the local instance preconfigured
+	docker build --tag "$(VALKEY_ADMIN_IMAGE):$(VALKEY_ADMIN_TAG)" --file src/valkey-admin/Dockerfile src/valkey-admin
+	kind load docker-image "$(VALKEY_ADMIN_IMAGE):$(VALKEY_ADMIN_TAG)" --name "$(CLUSTER_NAME)"
+
+full-resources: core-resources valkey-admin-image ## Reconcile ClickHouse, Kafka, Kafbat, and Valkey resources
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/clickhouse/
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/kafka/
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/valkey/
+	@kubectl --context "$(KUBE_CONTEXT)" --namespace data rollout restart deployment/valkey-admin
+	@kubectl --context "$(KUBE_CONTEXT)" --namespace data rollout status deployment/valkey-admin --timeout=300s
 	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-policies.sh
 
 dashboard-image: cluster ## Build and load the dashboard image into Kind
