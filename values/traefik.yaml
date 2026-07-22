@@ -1,0 +1,102 @@
+deployment:
+  replicas: 1
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9100"
+    prometheus.io/path: /metrics
+
+api:
+  dashboard: false
+
+gateway:
+  enabled: false
+
+gatewayClass:
+  enabled: false
+
+providers:
+  kubernetesCRD:
+    enabled: true
+  kubernetesGateway:
+    enabled: false
+  kubernetesIngress:
+    enabled: true
+    allowEmptyServices: true
+    publishedService:
+      enabled: true
+
+ingressClass:
+  enabled: true
+  isDefaultClass: true
+
+ports:
+  web:
+    nodePort: 30080
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    nodePort: 30443
+  kafka:
+    port: 9094
+    expose:
+      default: true
+    exposedPort: 9094
+    nodePort: 30094
+    protocol: TCP
+  postgresql:
+    port: 5432
+    expose:
+      default: true
+    exposedPort: 5432
+    nodePort: 30543
+    protocol: TCP
+  clickhouse-http:
+    port: 8123
+    expose:
+      default: true
+    exposedPort: 8123
+    nodePort: 30123
+    protocol: TCP
+  clickhouse-native:
+    port: 9000
+    expose:
+      default: true
+    exposedPort: 9000
+    nodePort: 30900
+    protocol: TCP
+  valkey:
+    port: 6379
+    expose:
+      default: true
+    exposedPort: 6379
+    nodePort: 30379
+    protocol: TCP
+
+service:
+  spec:
+    type: NodePort
+
+accessLog:
+  enabled: true
+  format: json
+
+log:
+  level: INFO
+
+metrics:
+  addInternals: true
+  prometheus:
+    addRoutersLabels: true
+    addServicesLabels: true
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi

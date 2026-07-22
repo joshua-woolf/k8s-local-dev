@@ -1,0 +1,160 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: otel-lgtm-data
+  namespace: observability
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-lgtm
+  namespace: observability
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-lgtm
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-lgtm
+    spec:
+      containers:
+        - name: otel-lgtm
+          image: grafana/otel-lgtm:0.27.1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: "true"
+            - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+              value: Admin
+            - name: GF_AUTH_DISABLE_LOGIN_FORM
+              value: "true"
+          ports:
+            - name: grafana
+              containerPort: 3000
+            - name: loki
+              containerPort: 3100
+            - name: tempo
+              containerPort: 3200
+            - name: pyroscope
+              containerPort: 4040
+            - name: otlp-grpc
+              containerPort: 4317
+            - name: otlp-http
+              containerPort: 4318
+            - name: prometheus
+              containerPort: 9090
+          readinessProbe:
+            exec:
+              command: ["cat", "/tmp/ready"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: loki-runtime
+              mountPath: /loki
+            - name: grafana-dashboard-provider
+              mountPath: /otel-lgtm/grafana/conf/provisioning/dashboards/local-dev.yaml
+              subPath: local-dev.yaml
+              readOnly: true
+            - name: grafana-dashboards
+              mountPath: /otel-lgtm/grafana/dashboards/local-dev
+              readOnly: true
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: otel-lgtm-data
+        - name: loki-runtime
+          emptyDir: {}
+        - name: grafana-dashboard-provider
+          configMap:
+            name: grafana-dashboard-provider
+        - name: grafana-dashboards
+          projected:
+            sources:
+              - configMap:
+                  name: grafana-dashboards-custom
+              - configMap:
+                  name: grafana-dashboards-kubernetes
+              - configMap:
+                  name: grafana-dashboards-platform
+              - configMap:
+                  name: grafana-dashboards-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-lgtm
+  namespace: observability
+spec:
+  selector:
+    app.kubernetes.io/name: otel-lgtm
+  ports:
+    - name: grafana
+      port: 3000
+      targetPort: grafana
+    - name: loki
+      port: 3100
+      targetPort: loki
+    - name: tempo
+      port: 3200
+      targetPort: tempo
+    - name: pyroscope
+      port: 4040
+      targetPort: pyroscope
+    - name: otlp-grpc
+      port: 4317
+      targetPort: otlp-grpc
+    - name: otlp-http
+      port: 4318
+      targetPort: otlp-http
+    - name: prometheus
+      port: 9090
+      targetPort: prometheus
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: observability
+  annotations:
+    cert-manager.io/cluster-issuer: local-dev-ca
+    localdev.dashboard/enabled: "true"
+    localdev.dashboard/name: Grafana
+    localdev.dashboard/category: Observability
+    localdev.dashboard/description: Logs, metrics, traces, and profiles
+    localdev.dashboard/credentials: grafana
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: grafana.k8s.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: otel-lgtm
+                port:
+                  name: grafana
+  tls:
+    - hosts:
+        - grafana.k8s.localhost
+      secretName: grafana-tls

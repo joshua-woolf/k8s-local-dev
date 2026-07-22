@@ -1,167 +1,172 @@
-import { KubeConfig, NetworkingV1Api, CustomObjectsApi, CoreV1Api } from '@kubernetes/client-node'
-import { trace, SpanStatusCode, context } from '@opentelemetry/api'
+import { CoreV1Api, DiscoveryV1Api, KubeConfig, NetworkingV1Api } from '@kubernetes/client-node'
+import { trace } from '@opentelemetry/api'
 
-class KubernetesService {
-  constructor() {
-    this.kc = new KubeConfig()
-    this.kc.loadFromCluster()
-    this.k8sApi = this.kc.makeApiClient(NetworkingV1Api)
-    this.customObjectsApi = this.kc.makeApiClient(CustomObjectsApi)
-    this.coreV1Api = this.kc.makeApiClient(CoreV1Api)
-  }
+const annotationPrefix = 'localdev.dashboard/'
 
-  async getIngresses() {
-    const activeContext = context.active()
-    const tracer = trace.getTracer('dashboard')
-    const span = tracer.startSpan('get_ingresses', { parent: activeContext })
+function responseItems(response) {
+  return response?.items || response?.body?.items || []
+}
 
-    return context.with(trace.setSpan(activeContext, span), async () => {
-      try {
-        const ingressResponse = await this.k8sApi.listIngressForAllNamespaces()
-        const ingresses = await Promise.all(
-          (ingressResponse?.items || []).map(async (ingress) => {
-            const credentials = await this.getCredentialsFromSecret(
-              ingress.metadata.namespace,
-              ingress.metadata.annotations?.['credentials-password-secret'],
-              ingress.metadata.annotations?.['credentials-username'],
-              ingress.metadata.annotations?.['credentials-password-jsonpath'],
-            )
+function annotationsFor(resource) {
+  return resource?.metadata?.annotations || {}
+}
 
-            return {
-              name: ingress.metadata.annotations?.['friendly-name'] || ingress.metadata.name,
-              urls: ingress.spec.rules.map(rule => `https://${rule.host}`),
-              credentials,
-            }
-          }),
-        )
+function isEnabled(resource) {
+  return annotationsFor(resource)[`${annotationPrefix}enabled`] === 'true'
+}
 
-        span.setStatus({ code: SpanStatusCode.OK })
-        return ingresses
-      }
-      catch (error) {
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: error.message,
-        })
-        throw error
-      }
-      finally {
-        span.end()
-      }
-    })
-  }
-
-  async getIngressRoutes() {
-    const activeContext = context.active()
-    const tracer = trace.getTracer('dashboard')
-    const span = tracer.startSpan('get_ingressroutes', { parent: activeContext })
-
-    return context.with(trace.setSpan(activeContext, span), async () => {
-      try {
-        const ingressRouteResponse = await this.customObjectsApi.listClusterCustomObject({
-          group: 'traefik.containo.us',
-          version: 'v1alpha1',
-          plural: 'ingressroutes',
-        })
-
-        const ingresses = await Promise.all(
-          (ingressRouteResponse?.items || []).map(async (ingress) => {
-            const credentials = await this.getCredentialsFromSecret(
-              ingress.metadata.namespace,
-              ingress.metadata.annotations?.['credentials-password-secret'],
-              ingress.metadata.annotations?.['credentials-username'],
-              ingress.metadata.annotations?.['credentials-password-jsonpath'],
-            )
-
-            return {
-              name: ingress.metadata.annotations?.['friendly-name'] || ingress.metadata.name,
-              urls: ingress.spec.routes.map(route => `https://${route.match.split('Host(`')[1]?.split('`)')[0]}`),
-              credentials,
-            }
-          }),
-        )
-
-        span.setStatus({ code: SpanStatusCode.OK })
-        return ingresses
-      }
-      catch (error) {
-        if (error.statusCode === 404) {
-          span.addEvent('traefik_crds_not_found', {
-            attributes: {
-              message: 'Traefik CRDs not found - skipping IngressRoute processing',
-            },
-          })
-          span.setStatus({
-            code: SpanStatusCode.OK,
-            message: 'Traefik CRDs not installed',
-          })
-          return []
-        }
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: error.message,
-        })
-        throw error
-      }
-      finally {
-        span.end()
-      }
-    })
-  }
-
-  async getCredentialsFromSecret(
-    namespace,
-    secretName,
-    usernameAnnotation,
-    passwordJsonPath,
-  ) {
-    const activeContext = context.active()
-    const tracer = trace.getTracer('dashboard')
-    const span = tracer.startSpan('get_credentials_from_secret', { parent: activeContext })
-
-    return context.with(trace.setSpan(activeContext, span), async () => {
-      try {
-        if (!secretName) return null
-
-        span.setAttribute('namespace', namespace)
-        span.setAttribute('secretName', secretName)
-
-        const secret = await this.coreV1Api.readNamespacedSecret({
-          name: secretName,
-          namespace: namespace,
-        })
-
-        const username = usernameAnnotation
-        let password
-
-        if (passwordJsonPath) {
-          const jsonPath = passwordJsonPath.replace(/[{}]/g, '')
-          const data = secret.data
-          password = Buffer.from(data[jsonPath.split('.')[2]], 'base64').toString()
-        }
-
-        span.setStatus({ code: SpanStatusCode.OK })
-        return username && password ? { username, password } : null
-      }
-      catch (error) {
-        span.addEvent('secret_fetch_error', {
-          attributes: {
-            error: error.message,
-            namespace,
-            secretName,
-          },
-        })
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: error.message,
-        })
-        return null
-      }
-      finally {
-        span.end()
-      }
-    })
+function displayMetadata(resource) {
+  const annotations = annotationsFor(resource)
+  return {
+    name: annotations[`${annotationPrefix}name`] || resource.metadata.name,
+    category: annotations[`${annotationPrefix}category`] || 'Applications',
+    description: annotations[`${annotationPrefix}description`] || '',
+    credentialProfile: annotations[`${annotationPrefix}credentials`] || null,
+    namespace: resource.metadata.namespace,
+    resourceName: resource.metadata.name,
   }
 }
 
-export { KubernetesService }
+class KubernetesService {
+  constructor(clients = {}) {
+    if (clients.networkingApi && clients.coreApi && clients.discoveryApi) {
+      this.networkingApi = clients.networkingApi
+      this.coreApi = clients.coreApi
+      this.discoveryApi = clients.discoveryApi
+      return
+    }
+
+    const kubeConfig = new KubeConfig()
+    kubeConfig.loadFromCluster()
+    this.networkingApi = kubeConfig.makeApiClient(NetworkingV1Api)
+    this.coreApi = kubeConfig.makeApiClient(CoreV1Api)
+    this.discoveryApi = kubeConfig.makeApiClient(DiscoveryV1Api)
+  }
+
+  async getDashboardItems() {
+    const [ingressResponse, serviceResponse, endpointSliceResponse] = await Promise.all([
+      this.networkingApi.listIngressForAllNamespaces(),
+      this.coreApi.listServiceForAllNamespaces(),
+      this.discoveryApi.listEndpointSliceForAllNamespaces(),
+    ])
+
+    const endpointIndex = this.buildEndpointIndex(responseItems(endpointSliceResponse))
+    const ingresses = responseItems(ingressResponse)
+      .filter(isEnabled)
+      .map(ingress => this.ingressItem(ingress, endpointIndex))
+    const services = this.deduplicateServices(
+      responseItems(serviceResponse)
+        .filter(isEnabled)
+        .map(service => this.serviceItem(service, endpointIndex)),
+    )
+
+    const items = [...ingresses, ...services]
+      .sort((left, right) => left.category.localeCompare(right.category) || left.name.localeCompare(right.name))
+
+    const span = trace.getActiveSpan()
+    span?.setAttribute('dashboard.items.count', items.length)
+    span?.setAttribute('dashboard.ingresses.count', ingresses.length)
+    span?.setAttribute('dashboard.services.count', services.length)
+    return items
+  }
+
+  buildEndpointIndex(endpointSlices) {
+    const index = new Map()
+    for (const endpointSlice of endpointSlices) {
+      const namespace = endpointSlice.metadata?.namespace
+      const serviceName = endpointSlice.metadata?.labels?.['kubernetes.io/service-name']
+      if (!namespace || !serviceName) continue
+
+      const key = `${namespace}/${serviceName}`
+      const current = index.get(key) || { ready: 0, total: 0 }
+      for (const endpoint of endpointSlice.endpoints || []) {
+        current.total += 1
+        if (endpoint.conditions?.ready !== false) current.ready += 1
+      }
+      index.set(key, current)
+    }
+    return index
+  }
+
+  ingressItem(ingress, endpointIndex) {
+    const metadata = displayMetadata(ingress)
+    const tlsHosts = new Set((ingress.spec?.tls || []).flatMap(tls => tls.hosts || []))
+    const rules = ingress.spec?.rules || []
+    const urls = rules
+      .filter(rule => rule.host)
+      .map(rule => `${tlsHosts.has(rule.host) ? 'https' : 'http'}://${rule.host}`)
+    const backendServices = rules.flatMap(rule => rule.http?.paths || [])
+      .map(path => path.backend?.service?.name)
+      .filter(Boolean)
+
+    return {
+      ...metadata,
+      id: `ingress:${metadata.namespace}/${metadata.resourceName}`,
+      type: 'http',
+      status: this.statusForServices(metadata.namespace, backendServices, endpointIndex),
+      urls: [...new Set(urls)],
+      connections: [],
+    }
+  }
+
+  serviceItem(service, endpointIndex) {
+    const metadata = displayMetadata(service)
+    const annotations = annotationsFor(service)
+    const host = annotations[`${annotationPrefix}host`]
+    const hostPort = Number.parseInt(annotations[`${annotationPrefix}port`], 10)
+    const protocol = annotations[`${annotationPrefix}protocol`] || 'tcp'
+    let connections
+
+    if (host && Number.isInteger(hostPort)) {
+      connections = [{
+        label: protocol.toUpperCase(),
+        endpoint: `${host}:${hostPort}`,
+      }]
+    }
+    else {
+      connections = (service.spec?.ports || []).map((port) => {
+        const servicePort = Number(port.port)
+        return {
+          label: port.name || `${port.protocol || 'TCP'} ${servicePort}`,
+          endpoint: `${metadata.resourceName}.${metadata.namespace}.svc.cluster.local:${servicePort}`,
+          command: `kubectl --context kind-local-dev --namespace ${metadata.namespace} port-forward service/${metadata.resourceName} ${servicePort}:${servicePort}`,
+        }
+      })
+    }
+
+    return {
+      ...metadata,
+      id: `service:${metadata.namespace}/${metadata.resourceName}`,
+      type: 'service',
+      status: this.statusForServices(metadata.namespace, [metadata.resourceName], endpointIndex),
+      urls: [],
+      connections,
+    }
+  }
+
+  statusForServices(namespace, serviceNames, endpointIndex) {
+    if (serviceNames.length === 0) return 'unknown'
+    return serviceNames.every((serviceName) => {
+      return (endpointIndex.get(`${namespace}/${serviceName}`)?.ready || 0) > 0
+    }) ? 'ready' : 'unavailable'
+  }
+
+  deduplicateServices(services) {
+    const deduplicated = new Map()
+    const preferred = [...services].sort((left, right) => {
+      const leftRank = left.resourceName.endsWith('-rw') ? 0 : 1
+      const rightRank = right.resourceName.endsWith('-rw') ? 0 : 1
+      return leftRank - rightRank
+    })
+
+    for (const service of preferred) {
+      const key = `${service.namespace}/${service.name}`
+      if (!deduplicated.has(key)) {
+        deduplicated.set(key, service)
+      }
+    }
+    return [...deduplicated.values()]
+  }
+}
+
+export { KubernetesService, annotationPrefix, responseItems }

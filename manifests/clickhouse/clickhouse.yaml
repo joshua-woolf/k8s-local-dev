@@ -1,0 +1,166 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-prometheus
+  namespace: data
+data:
+  prometheus.xml: |
+    <clickhouse>
+      <prometheus>
+        <endpoint>/metrics</endpoint>
+        <port>9363</port>
+        <metrics>true</metrics>
+        <events>true</events>
+        <asynchronous_metrics>true</asynchronous_metrics>
+        <errors>true</errors>
+        <histograms>true</histograms>
+        <dimensional_metrics>true</dimensional_metrics>
+      </prometheus>
+    </clickhouse>
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickhouse
+  namespace: data
+  annotations:
+    localdev.dashboard/enabled: "true"
+    localdev.dashboard/name: ClickHouse
+    localdev.dashboard/category: Data
+    localdev.dashboard/description: Single-node ClickHouse analytics database
+    localdev.dashboard/host: clickhouse.k8s.localhost
+    localdev.dashboard/port: "9000"
+    localdev.dashboard/protocol: clickhouse
+    localdev.dashboard/credentials: clickhouse
+spec:
+  selector:
+    app.kubernetes.io/name: clickhouse
+  ports:
+    - name: http
+      port: 8123
+      targetPort: http
+    - name: native
+      port: 9000
+      targetPort: native
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: clickhouse
+  namespace: data
+spec:
+  serviceName: clickhouse
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: clickhouse
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: clickhouse
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9363"
+        prometheus.io/path: /metrics
+    spec:
+      securityContext:
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: clickhouse
+          image: clickhouse/clickhouse-server:26.4.4.38
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CLICKHOUSE_DB
+              value: app
+            - name: CLICKHOUSE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: clickhouse-credentials
+                  key: username
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: clickhouse-credentials
+                  key: password
+          ports:
+            - name: http
+              containerPort: 8123
+            - name: native
+              containerPort: 9000
+            - name: metrics
+              containerPort: 9363
+          readinessProbe:
+            tcpSocket:
+              port: native
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: native
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            runAsGroup: 101
+            runAsNonRoot: true
+            runAsUser: 101
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/clickhouse
+            - name: prometheus-config
+              mountPath: /etc/clickhouse-server/config.d/prometheus.xml
+              subPath: prometheus.xml
+              readOnly: true
+      volumes:
+        - name: prometheus-config
+          configMap:
+            name: clickhouse-prometheus
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: clickhouse-http
+  namespace: data
+  annotations:
+    cert-manager.io/cluster-issuer: local-dev-ca
+    localdev.dashboard/enabled: "true"
+    localdev.dashboard/name: ClickHouse HTTP
+    localdev.dashboard/category: Data
+    localdev.dashboard/description: HTTPS access to the ClickHouse HTTP interface
+    localdev.dashboard/credentials: clickhouse
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: clickhouse.k8s.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: clickhouse
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - clickhouse.k8s.localhost
+      secretName: clickhouse-http-tls

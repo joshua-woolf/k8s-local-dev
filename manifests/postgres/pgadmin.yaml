@@ -1,0 +1,172 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgadmin-config
+  namespace: data
+data:
+  servers.json: |
+    {
+      "Servers": {
+        "1": {
+          "Name": "Local PostgreSQL",
+          "Group": "Local Development",
+          "Host": "postgres-rw.data.svc.cluster.local",
+          "Port": 5432,
+          "MaintenanceDB": "app",
+          "Username": "app",
+          "PasswordExecCommand": "cat /run/secrets/postgres/password",
+          "PasswordExecExpiration": 0,
+          "ConnectionParameters": {
+            "sslmode": "prefer",
+            "connect_timeout": 10
+          }
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pgadmin
+  namespace: data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgadmin
+  namespace: data
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pgadmin
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pgadmin
+    spec:
+      securityContext:
+        fsGroup: 5050
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: pgadmin
+          image: docker.io/dpage/pgadmin4:9.16
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PGADMIN_DEFAULT_EMAIL
+              value: admin@local.dev
+            - name: PGADMIN_DEFAULT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pgadmin-credentials
+                  key: password
+            - name: PGADMIN_LISTEN_PORT
+              value: "8080"
+            - name: PGADMIN_REPLACE_SERVERS_ON_STARTUP
+              value: "True"
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /misc/ping
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /misc/ping
+              port: http
+            initialDelaySeconds: 45
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsGroup: 5050
+            runAsNonRoot: true
+            runAsUser: 5050
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: config
+              mountPath: /pgadmin4/servers.json
+              subPath: servers.json
+              readOnly: true
+            - name: postgres-credentials
+              mountPath: /run/secrets/postgres
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/pgadmin
+      volumes:
+        - name: config
+          configMap:
+            name: pgadmin-config
+        - name: postgres-credentials
+          secret:
+            secretName: postgres-app
+            items:
+              - key: password
+                path: password
+        - name: data
+          persistentVolumeClaim:
+            claimName: pgadmin
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgadmin
+  namespace: data
+spec:
+  selector:
+    app.kubernetes.io/name: pgadmin
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pgadmin
+  namespace: data
+  annotations:
+    cert-manager.io/cluster-issuer: local-dev-ca
+    localdev.dashboard/enabled: "true"
+    localdev.dashboard/name: pgAdmin
+    localdev.dashboard/category: Data tools
+    localdev.dashboard/description: PostgreSQL administration with the local database preconfigured
+    localdev.dashboard/credentials: pgadmin
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: pgadmin.k8s.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pgadmin
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - pgadmin.k8s.localhost
+      secretName: pgadmin-tls

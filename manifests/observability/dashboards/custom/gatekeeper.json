@@ -1,0 +1,134 @@
+{
+  "annotations": {
+    "list": [
+
+    ]
+  },
+  "editable": false,
+  "graphTooltip": 1,
+  "links": [
+
+  ],
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "tags": [
+    "local-dev",
+    "gatekeeper"
+  ],
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Gatekeeper",
+  "uid": "localdev-gatekeeper",
+  "version": 1,
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "targets": [
+        {
+          "expr": "min(up{job=\"gatekeeper\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Components up",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "sum(gatekeeper_violations)",
+          "refId": "A"
+        }
+      ],
+      "title": "Current violations",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "sum(gatekeeper_constraints)",
+          "refId": "A"
+        }
+      ],
+      "title": "Constraints",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "time() - max(gatekeeper_audit_last_run_end_time)",
+          "refId": "A"
+        }
+      ],
+      "title": "Seconds since audit",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "sum by (enforcement_action) (gatekeeper_violations)",
+          "legendFormat": "{{enforcement_action}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Violations by enforcement action",
+      "type": "timeseries"
+    }
+  ]
+}

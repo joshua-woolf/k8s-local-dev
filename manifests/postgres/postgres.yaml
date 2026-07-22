@@ -1,0 +1,34 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres
+  namespace: data
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:18-minimal-trixie
+  inheritedMetadata:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+      prometheus.io/path: /metrics
+      localdev.dashboard/enabled: "true"
+      localdev.dashboard/name: PostgreSQL
+      localdev.dashboard/category: Data
+      localdev.dashboard/description: Single-node PostgreSQL development database
+      localdev.dashboard/host: postgres.k8s.localhost
+      localdev.dashboard/port: "5432"
+      localdev.dashboard/protocol: postgresql
+      localdev.dashboard/credentials: postgres
+  bootstrap:
+    initdb:
+      database: app
+      owner: app
+  storage:
+    size: 5Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi

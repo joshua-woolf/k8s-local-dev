@@ -1,0 +1,162 @@
+SHELL := /bin/bash
+.DEFAULT_GOAL := help
+.NOTPARALLEL:
+
+CLUSTER_NAME ?= local-dev
+KUBE_CONTEXT ?= kind-$(CLUSTER_NAME)
+IMAGE ?=
+CONFIRM ?=
+DASHBOARD_IMAGE ?= local/dashboard
+DASHBOARD_TAG ?= dev
+VALKEY_ADMIN_IMAGE ?= local/valkey-admin
+VALKEY_ADMIN_TAG ?= 1.0.1-local
+PLAYWRIGHT_CHANNEL ?= chrome
+
+.PHONY: help doctor cluster helm-core helm-full require-ca tls trust untrust core-resources valkey-admin-image full-resources dashboard-image dashboard up-core up status ports credentials load test validate smoke reset
+
+help: ## Show available commands
+	@awk 'BEGIN {FS = ":.*## "; printf "Usage: make <target>\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+doctor: ## Check local prerequisites and Docker availability
+	@missing=0; \
+	for command in docker kind kubectl helm helmfile mkcert; do \
+		if ! command -v "$$command" >/dev/null 2>&1; then \
+			echo "Missing required command: $$command"; \
+			missing=1; \
+		fi; \
+	done; \
+	test "$$missing" -eq 0
+	@docker info >/dev/null 2>&1 || { echo "Docker is not running"; exit 1; }
+
+cluster: ## Create the Kind cluster if it does not exist
+	@if kind get clusters 2>/dev/null | grep -qx "$(CLUSTER_NAME)"; then \
+		echo "Kind cluster $(CLUSTER_NAME) already exists"; \
+		stale=0; \
+		for mapping in "30080 80" "30443 443" "30543 5432" "30123 8123" "30900 9000" "30094 9094" "30379 6379"; do \
+			container_port="$${mapping%% *}"; \
+			host_port="$${mapping##* }"; \
+			if ! docker port "$(CLUSTER_NAME)-control-plane" "$${container_port}/tcp" 2>/dev/null | grep -Eq "127\\.0\\.0\\.1:$${host_port}$$"; then \
+				stale=1; \
+			fi; \
+		done; \
+		if test "$$stale" -ne 0; then \
+			echo "Kind host-port mappings are stale. Recreate with: make reset CONFIRM=1 && make up"; \
+			exit 1; \
+		fi; \
+	else \
+		kind create cluster --name "$(CLUSTER_NAME)" --config kind.yaml; \
+	fi
+	@kubectl config use-context "$(KUBE_CONTEXT)" >/dev/null
+
+helm-core: ## Reconcile the lightweight platform controllers
+	helmfile --selector profile=core sync
+
+helm-full: ## Reconcile all platform controllers
+	helmfile sync
+
+require-ca:
+	@test -s .state/mkcert/rootCA.pem -a -s .state/mkcert/rootCA-key.pem || { echo "Local CA not found. Run 'make trust' first."; exit 1; }
+
+tls: require-ca ## Synchronize the local CA and ClusterIssuer into the cluster
+	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-ca.sh
+
+trust: ## Generate and trust the dedicated local development CA
+	@./scripts/trust-ca.sh
+	@if kind get clusters 2>/dev/null | grep -qx "$(CLUSTER_NAME)" && \
+		kubectl --context "$(KUBE_CONTEXT)" -n cert-manager get deployment cert-manager >/dev/null 2>&1; then \
+		CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-ca.sh; \
+	else \
+		echo "CA is trusted. It will be synchronized on the next 'make up'."; \
+	fi
+
+untrust: ## Remove this repository's CA from the host trust stores
+	@./scripts/untrust-ca.sh
+
+core-resources: ## Reconcile observability, Postgres, and pgAdmin resources
+	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/namespaces.yaml
+	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-data-secrets.sh
+	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-grafana-dashboards.sh
+	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/observability/
+	@kubectl --context "$(KUBE_CONTEXT)" --namespace observability rollout restart deployment/otel-lgtm
+	@kubectl --context "$(KUBE_CONTEXT)" --namespace observability rollout status deployment/otel-lgtm --timeout=300s
+	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/postgres/
+
+valkey-admin-image: cluster ## Build and load Valkey Admin with the local instance preconfigured
+	docker build --tag "$(VALKEY_ADMIN_IMAGE):$(VALKEY_ADMIN_TAG)" --file src/valkey-admin/Dockerfile src/valkey-admin
+	kind load docker-image "$(VALKEY_ADMIN_IMAGE):$(VALKEY_ADMIN_TAG)" --name "$(CLUSTER_NAME)"
+
+full-resources: core-resources valkey-admin-image ## Reconcile ClickHouse, Kafka, Kafbat, and Valkey resources
+	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/clickhouse/
+	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/kafka/
+	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/valkey/
+	@kubectl --context "$(KUBE_CONTEXT)" --namespace data rollout restart deployment/valkey-admin
+	@kubectl --context "$(KUBE_CONTEXT)" --namespace data rollout status deployment/valkey-admin --timeout=300s
+	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-policies.sh
+
+dashboard-image: cluster ## Build and load the dashboard image into Kind
+	docker build --tag "$(DASHBOARD_IMAGE):$(DASHBOARD_TAG)" --file src/dashboard/server.Dockerfile src/dashboard
+	kind load docker-image "$(DASHBOARD_IMAGE):$(DASHBOARD_TAG)" --name "$(CLUSTER_NAME)"
+
+dashboard: dashboard-image ## Install or refresh the dashboard
+	helm upgrade dashboard charts/dashboard --install --rollback-on-failure --create-namespace --namespace dashboard --timeout 5m --wait \
+		--set-string image.repository="$(DASHBOARD_IMAGE)" \
+		--set-string image.tag="$(DASHBOARD_TAG)"
+	@kubectl --context "$(KUBE_CONTEXT)" --namespace dashboard rollout restart deployment/dashboard
+	@kubectl --context "$(KUBE_CONTEXT)" --namespace dashboard rollout status deployment/dashboard --timeout=180s
+
+up-core: doctor require-ca cluster helm-core tls core-resources dashboard ## Create the lightweight local cluster
+	@$(MAKE) --no-print-directory status
+
+up: doctor require-ca cluster helm-full tls full-resources dashboard ## Create the complete local cluster
+	@$(MAKE) --no-print-directory status
+
+status: ## Show cluster nodes, releases, pods, and ingresses
+	@kubectl --context "$(KUBE_CONTEXT)" get nodes
+	@helm --kube-context "$(KUBE_CONTEXT)" list --all-namespaces
+	@kubectl --context "$(KUBE_CONTEXT)" get pods --all-namespaces
+	@kubectl --context "$(KUBE_CONTEXT)" get ingress --all-namespaces 2>/dev/null || true
+	@kubectl --context "$(KUBE_CONTEXT)" get ingressroutetcp --all-namespaces 2>/dev/null || true
+
+ports: ## Print host access details for data services
+	@echo "PostgreSQL:       postgres.k8s.localhost:5432"
+	@echo "ClickHouse HTTP:  https://clickhouse.k8s.localhost or http://clickhouse.k8s.localhost:8123"
+	@echo "ClickHouse native: clickhouse.k8s.localhost:9000"
+	@echo "Kafka:            kafka.k8s.localhost:9094"
+	@echo "Valkey:           valkey.k8s.localhost:6379"
+
+credentials: ## Print local data-tool and database credentials
+	@echo "pgAdmin email:       admin@local.dev"
+	@printf "pgAdmin password:    "; kubectl --context "$(KUBE_CONTEXT)" --namespace data get secret pgadmin-credentials --output=jsonpath='{.data.password}' | base64 --decode; echo
+	@printf "PostgreSQL username: "; kubectl --context "$(KUBE_CONTEXT)" --namespace data get secret postgres-app --output=jsonpath='{.data.username}' | base64 --decode; echo
+	@printf "PostgreSQL password: "; kubectl --context "$(KUBE_CONTEXT)" --namespace data get secret postgres-app --output=jsonpath='{.data.password}' | base64 --decode; echo
+	@printf "ClickHouse username: "; kubectl --context "$(KUBE_CONTEXT)" --namespace data get secret clickhouse-credentials --output=jsonpath='{.data.username}' | base64 --decode; echo
+	@printf "ClickHouse password: "; kubectl --context "$(KUBE_CONTEXT)" --namespace data get secret clickhouse-credentials --output=jsonpath='{.data.password}' | base64 --decode; echo
+	@echo "Valkey username:      default"
+	@printf "Valkey password:      "; kubectl --context "$(KUBE_CONTEXT)" --namespace data get secret valkey-credentials --output=jsonpath='{.data.password}' | base64 --decode; echo
+
+load: ## Load IMAGE into the Kind cluster
+	@test -n "$(IMAGE)" || { echo "Usage: make load IMAGE=example/app:dev"; exit 1; }
+	kind load docker-image "$(IMAGE)" --name "$(CLUSTER_NAME)"
+
+test: ## Run dashboard lint and unit tests
+	cd src/dashboard && npm_config_cache="$(CURDIR)/.state/npm-cache" npm ci && npm run lint && npm test
+
+validate: ## Render and validate charts, manifests, scripts, and dashboard code
+	@mkdir -p .rendered
+	helmfile template > .rendered/platform.yaml
+	helm lint charts/dashboard
+	helm template dashboard charts/dashboard --namespace dashboard > .rendered/dashboard.yaml
+	@find manifests -name '*.yaml' -print0 | xargs -0 kubeconform -strict -ignore-missing-schemas -summary
+	@kubeconform -strict -ignore-missing-schemas -summary .rendered/platform.yaml .rendered/dashboard.yaml
+	@shellcheck scripts/*.sh
+	@./scripts/verify-grafana-dashboards.sh
+	@$(MAKE) --no-print-directory test
+
+smoke: require-ca ## Run cluster and browser smoke tests
+	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/smoke-test.sh
+	cd src/dashboard && NODE_EXTRA_CA_CERTS="$(CURDIR)/.state/mkcert/rootCA.pem" \
+		PLAYWRIGHT_CHANNEL="$(PLAYWRIGHT_CHANNEL)" npm run test:smoke
+
+reset: ## Delete the cluster and all local cluster data (requires CONFIRM=1)
+	@test "$(CONFIRM)" = "1" || { echo "This deletes the cluster and every PVC. Re-run as: make reset CONFIRM=1"; exit 1; }
+	kind delete cluster --name "$(CLUSTER_NAME)"

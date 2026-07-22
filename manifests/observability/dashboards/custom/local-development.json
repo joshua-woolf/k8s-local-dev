@@ -1,0 +1,79 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "links": [
+    {"title": "Kubernetes", "type": "link", "url": "/d/k8s_views_global"},
+    {"title": "PostgreSQL", "type": "link", "url": "/d/cloudnative-pg"},
+    {"title": "Kafka", "type": "link", "url": "/d/7ddce8bf9ea7ddb5"},
+    {"title": "ClickHouse", "type": "link", "url": "/d/ce2e96276hjpcd1"}
+  ],
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red"}, {"color": "green", "value": 1}]}}, "overrides": []},
+      "gridPos": {"h": 5, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "targets": [{"expr": "sum(kube_node_status_condition{cluster=\"local-dev\",condition=\"Ready\",status=\"true\"})", "refId": "A"}],
+      "title": "Ready nodes",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green"}, {"color": "red", "value": 1}]}}, "overrides": []},
+      "gridPos": {"h": 5, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "targets": [{"expr": "sum(kube_pod_status_phase{cluster=\"local-dev\",phase=~\"Pending|Failed|Unknown\"})", "refId": "A"}],
+      "title": "Unhealthy pods",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red"}, {"color": "green", "value": 1}]}}, "overrides": []},
+      "gridPos": {"h": 5, "w": 6, "x": 12, "y": 0},
+      "id": 3,
+      "targets": [{"expr": "sum(up{cluster=\"local-dev\"})", "refId": "A"}],
+      "title": "Healthy scrape targets",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green"}, {"color": "red", "value": 1}]}}, "overrides": []},
+      "gridPos": {"h": 5, "w": 6, "x": 18, "y": 0},
+      "id": 4,
+      "targets": [{"expr": "sum(1 - up{cluster=\"local-dev\"})", "refId": "A"}],
+      "title": "Failed scrape targets",
+      "type": "stat"
+    },
+    {
+      "folderId": 0,
+      "gridPos": {"h": 10, "w": 12, "x": 0, "y": 5},
+      "id": 5,
+      "limit": 30,
+      "query": "",
+      "showHeadings": true,
+      "tags": ["upstream"],
+      "title": "Community dashboards",
+      "type": "dashlist"
+    },
+    {
+      "folderId": 0,
+      "gridPos": {"h": 10, "w": 12, "x": 12, "y": 5},
+      "id": 6,
+      "limit": 30,
+      "query": "",
+      "showHeadings": true,
+      "tags": ["local-dev"],
+      "title": "All local dashboards",
+      "type": "dashlist"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "tags": ["local-dev", "overview"],
+  "time": {"from": "now-1h", "to": "now"},
+  "timezone": "browser",
+  "title": "Local Development Overview",
+  "uid": "localdev-overview",
+  "version": 1
+}

@@ -1,204 +1,221 @@
-class ThemeManager {
-  constructor() {
-    this.themeToggle = document.getElementById('theme-toggle')
-    this.darkIcon = document.getElementById('theme-toggle-dark-icon')
-    this.lightIcon = document.getElementById('theme-toggle-light-icon')
-    this.init()
+const elements = {
+  container: document.getElementById('services-container'),
+  empty: document.getElementById('empty'),
+  error: document.getElementById('error'),
+  errorMessage: document.getElementById('error-message'),
+  lastUpdated: document.getElementById('last-updated'),
+  loading: document.getElementById('loading'),
+  readyCount: document.getElementById('ready-count'),
+  refresh: document.getElementById('refresh-button'),
+  search: document.getElementById('service-search'),
+  serviceCount: document.getElementById('service-count'),
+  theme: document.getElementById('theme-toggle'),
+}
+
+let services = []
+const credentialCache = new Map()
+
+function createElement(tagName, className, text) {
+  const element = document.createElement(tagName)
+  if (className) element.className = className
+  if (text !== undefined) element.textContent = text
+  return element
+}
+
+function initialiseTheme() {
+  const savedTheme = localStorage.getItem('theme')
+  const darkPreferred = window.matchMedia('(prefers-color-scheme: dark)').matches
+  document.documentElement.dataset.theme = savedTheme || (darkPreferred ? 'dark' : 'light')
+}
+
+function toggleTheme() {
+  const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'
+  document.documentElement.dataset.theme = nextTheme
+  localStorage.setItem('theme', nextTheme)
+}
+
+async function copyText(value, button) {
+  await navigator.clipboard.writeText(value)
+  const previousText = button.textContent
+  button.textContent = 'Copied'
+  button.classList.add('is-copied')
+  window.setTimeout(() => {
+    button.textContent = previousText
+    button.classList.remove('is-copied')
+  }, 1200)
+}
+
+function createCopyButton(value, label = 'Copy') {
+  const button = createElement('button', 'copy-button', label)
+  button.type = 'button'
+  button.addEventListener('click', () => {
+    copyText(value, button).catch(error => console.error('Clipboard write failed', error))
+  })
+  return button
+}
+
+function createTargetRow(label, value, { href, copyValue } = {}) {
+  const row = createElement('div', 'target-row')
+  row.append(createElement('span', 'target-label', label))
+
+  if (href) {
+    const link = createElement('a', 'target-value', value)
+    link.href = href
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
+    row.append(link)
+  }
+  else {
+    row.append(createElement('span', 'target-value', value))
   }
 
-  init() {
-    this.updateThemeToggleIcons()
+  if (copyValue) row.append(createCopyButton(copyValue))
+  return row
+}
 
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-      if (!localStorage.theme) {
-        if (e.matches) {
-          document.documentElement.classList.add('dark')
-        }
-        else {
-          document.documentElement.classList.remove('dark')
-        }
-        this.updateThemeToggleIcons()
-      }
-    })
-
-    const observer = new MutationObserver(() => {
-      this.updateThemeToggleIcons()
-    })
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    })
-  }
-
-  updateThemeToggleIcons() {
-    const isDark = document.documentElement.classList.contains('dark')
-    this.darkIcon.classList.toggle('hidden', isDark)
-    this.lightIcon.classList.toggle('hidden', !isDark)
+function renderCredentialFields(panel, credentials) {
+  panel.replaceChildren()
+  for (const field of credentials.fields) {
+    const row = createTargetRow(field.label, field.value, { copyValue: field.value })
+    if (field.sensitive) row.dataset.sensitive = 'true'
+    panel.append(row)
   }
 }
 
-// eslint-disable-next-line no-unused-vars
-class ClipboardManager {
-  static async copyToClipboard(text, button) {
-    try {
-      await navigator.clipboard.writeText(text)
-      button.classList.add('text-green-500', 'dark:text-green-400', 'scale-110')
-      setTimeout(() => {
-        button.classList.remove('text-green-500', 'dark:text-green-400', 'scale-110')
-      }, 300)
-    }
-    catch (err) {
-      console.error('Failed to copy text:', err)
-    }
+async function revealCredentials(service, panel, button) {
+  button.disabled = true
+  button.textContent = 'Loading…'
+
+  try {
+    const response = await fetch(`/api/credentials/${encodeURIComponent(service.credentialProfile)}`, {
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    })
+    if (!response.ok) throw new Error(`Credentials API returned ${response.status}`)
+    const credentials = await response.json()
+    credentialCache.set(service.credentialProfile, credentials)
+    renderCredentialFields(panel, credentials)
+  }
+  catch (error) {
+    button.disabled = false
+    button.textContent = 'Try again'
+    const message = createElement('span', 'credential-error', error.message)
+    panel.append(message)
   }
 }
 
-class RouteManager {
-  constructor() {
-    this.routesContainer = document.getElementById('routes-container')
-    this.loading = document.getElementById('loading')
-    this.error = document.getElementById('error')
-    this.noResults = document.getElementById('no-results')
-    this.searchInput = document.getElementById('route-search')
-    this.refreshButton = document.getElementById('refresh-button')
-    this.routes = []
-    this.init()
-  }
+function createCredentialsPanel(service) {
+  if (!service.credentialProfile) return null
 
-  init() {
-    this.fetchRoutes()
-    this.setupEventListeners()
-    this.searchInput.focus()
-    setInterval(() => this.fetchRoutes(), 30000)
-  }
+  const section = createElement('section', 'credentials-panel')
+  const heading = createElement('div', 'credential-heading', 'Credentials')
+  const content = createElement('div', 'credential-content')
+  content.setAttribute('aria-live', 'polite')
+  section.append(heading, content)
 
-  setupEventListeners() {
-    this.searchInput.addEventListener('input', () => this.filterRoutes())
-    this.refreshButton.addEventListener('click', () => {
-      this.refreshButton.classList.add('animate-spin')
-      this.fetchRoutes().finally(() => {
-        this.refreshButton.classList.remove('animate-spin')
-      })
+  const cached = credentialCache.get(service.credentialProfile)
+  if (cached) {
+    renderCredentialFields(content, cached)
+  }
+  else {
+    const button = createElement('button', 'credential-button', 'Reveal credentials')
+    button.type = 'button'
+    button.addEventListener('click', () => {
+      revealCredentials(service, content, button).catch(error => console.error('Credential reveal failed', error))
     })
+    content.append(button)
   }
+  return section
+}
 
-  createRouteCard(route) {
-    return `
-      <div class="route-card bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg p-6 transition-all duration-200">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center">
-            <span class="route-name text-lg font-semibold px-3 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg">
-              ${this.escapeHtml(route.name)}
-            </span>
-          </div>
-        </div>
-        <div class="space-y-2">
-          ${route.urls.map(url => this.createUrlLink(url)).join('')}
-          ${this.createCredentialsSection(route.credentials)}
-        </div>
-      </div>
-    `
+function createCard(service) {
+  const card = createElement('article', 'service-card')
+  const header = createElement('div', 'card-header')
+  const titleBlock = createElement('div')
+  const title = createElement('h3', 'service-name', service.name)
+  const namespace = createElement('div', 'namespace', `${service.namespace} / ${service.resourceName}`)
+  const status = createElement('span', `status status-${service.status}`, service.status)
+
+  titleBlock.append(title, namespace)
+  header.append(titleBlock, status)
+  card.append(header)
+  card.append(createElement('p', 'description', service.description || 'Local Kubernetes service'))
+
+  const targets = createElement('div', 'targets')
+  for (const url of service.urls || []) {
+    targets.append(createTargetRow('URL', url, { href: url, copyValue: url }))
   }
-
-  createUrlLink(url) {
-    return `
-      <div class="group">
-        <a href="${this.escapeHtml(url)}"
-           target="_blank"
-           class="route-url block p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
-           rel="noopener noreferrer">
-          <div class="flex items-center text-gray-700 dark:text-gray-300">
-            <svg class="h-4 w-4 mr-2 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-            </svg>
-            <span class="truncate">${this.escapeHtml(url)}</span>
-          </div>
-        </a>
-      </div>
-    `
-  }
-
-  createCredentialsSection(credentials) {
-    if (!credentials) return ''
-
-    return `
-      <div class="mt-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-        <div class="space-y-2">
-          <div class="flex items-center">
-            <span class="text-sm text-gray-700 dark:text-gray-300 w-20">Username:</span>
-            <code class="px-3 py-1 rounded bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-mono text-sm">${this.escapeHtml(credentials.username)}</code>
-            <button class="ml-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-all duration-200"
-                    onclick="ClipboardManager.copyToClipboard('${this.escapeHtml(credentials.username)}', this)"
-                    title="Copy username">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
-              </svg>
-            </button>
-          </div>
-          <div class="flex items-center">
-            <span class="text-sm text-gray-700 dark:text-gray-300 w-20">Password:</span>
-            <code class="px-3 py-1 rounded bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-mono text-sm">${this.escapeHtml(credentials.password)}</code>
-            <button class="ml-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-all duration-200"
-                    onclick="ClipboardManager.copyToClipboard('${this.escapeHtml(credentials.password)}', this)"
-                    title="Copy password">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    `
-  }
-
-  escapeHtml(str) {
-    const div = document.createElement('div')
-    div.textContent = str
-    return div.innerHTML
-  }
-
-  filterRoutes() {
-    const query = this.searchInput.value.toLowerCase()
-    const filteredRoutes = this.routes.filter((route) => {
-      return route.name.toLowerCase().includes(query)
-        || route.urls.some(url => url.toLowerCase().includes(query))
-    })
-
-    this.routesContainer.innerHTML = filteredRoutes
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map(route => this.createRouteCard(route))
-      .join('')
-
-    this.noResults.classList.toggle('hidden', filteredRoutes.length > 0)
-    this.routesContainer.classList.toggle('hidden', filteredRoutes.length === 0)
-  }
-
-  async fetchRoutes() {
-    this.loading.style.display = 'block'
-    this.error.classList.add('hidden')
-    this.routesContainer.classList.add('hidden')
-    this.noResults.classList.add('hidden')
-
-    try {
-      const response = await fetch('/api/routes')
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      this.routes = await response.json()
-
-      this.loading.style.display = 'none'
-      this.routesContainer.classList.remove('hidden')
-      this.filterRoutes()
+  for (const connection of service.connections || []) {
+    targets.append(createTargetRow(connection.label, connection.endpoint, { copyValue: connection.endpoint }))
+    if (connection.command) {
+      targets.append(createTargetRow('Command', connection.command, { copyValue: connection.command }))
     }
-    catch (error) {
-      this.loading.style.display = 'none'
-      this.error.classList.remove('hidden')
-      console.error('Error:', error)
-    }
+  }
+  card.append(targets)
+  const credentialsPanel = createCredentialsPanel(service)
+  if (credentialsPanel) card.append(credentialsPanel)
+  return card
+}
+
+function matchesSearch(service, query) {
+  if (!query) return true
+  const values = [
+    service.name,
+    service.namespace,
+    service.category,
+    service.description,
+    ...(service.urls || []),
+    ...(service.connections || []).flatMap(connection => [connection.endpoint, connection.command]),
+  ]
+  return values.filter(Boolean).some(value => value.toLowerCase().includes(query))
+}
+
+function render() {
+  const query = elements.search.value.trim().toLowerCase()
+  const filtered = services.filter(service => matchesSearch(service, query))
+  const grouped = Map.groupBy(filtered, service => service.category)
+  const fragment = document.createDocumentFragment()
+
+  for (const [category, categoryServices] of grouped) {
+    const section = createElement('section', 'service-group')
+    const heading = createElement('h2', '', category)
+    const grid = createElement('div', 'service-grid')
+    for (const service of categoryServices) grid.append(createCard(service))
+    section.append(heading, grid)
+    fragment.append(section)
+  }
+
+  elements.container.replaceChildren(fragment)
+  elements.empty.hidden = filtered.length !== 0
+  elements.serviceCount.textContent = String(services.length)
+  elements.readyCount.textContent = String(services.filter(service => service.status === 'ready').length)
+}
+
+async function refreshServices() {
+  elements.refresh.classList.add('is-refreshing')
+  elements.loading.hidden = services.length > 0
+  elements.error.hidden = true
+
+  try {
+    const response = await fetch('/api/services', { headers: { Accept: 'application/json' } })
+    if (!response.ok) throw new Error(`Dashboard API returned ${response.status}`)
+    services = await response.json()
+    elements.lastUpdated.textContent = `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+    render()
+  }
+  catch (error) {
+    elements.errorMessage.textContent = error.message
+    elements.error.hidden = false
+  }
+  finally {
+    elements.loading.hidden = true
+    elements.refresh.classList.remove('is-refreshing')
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  new ThemeManager()
-  new RouteManager()
-})
+initialiseTheme()
+elements.theme.addEventListener('click', toggleTheme)
+elements.search.addEventListener('input', render)
+elements.refresh.addEventListener('click', refreshServices)
+refreshServices()
+window.setInterval(refreshServices, 30000)

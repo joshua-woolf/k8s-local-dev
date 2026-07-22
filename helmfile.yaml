@@ -1,0 +1,102 @@
+repositories:
+  - name: traefik
+    url: https://traefik.github.io/charts
+  - name: jetstack
+    url: https://charts.jetstack.io
+  - name: grafana
+    url: https://grafana.github.io/helm-charts
+  - name: cnpg
+    url: https://cloudnative-pg.github.io/charts
+  - name: strimzi
+    url: https://strimzi.io/charts/
+  - name: gatekeeper
+    url: https://open-policy-agent.github.io/gatekeeper/charts
+  - name: prometheus-community
+    url: https://prometheus-community.github.io/helm-charts
+
+helmDefaults:
+  atomic: true
+  cleanupOnFail: true
+  timeout: 600
+  wait: true
+
+releases:
+  - name: traefik
+    namespace: traefik
+    createNamespace: true
+    chart: traefik/traefik
+    version: 41.0.2
+    labels:
+      profile: core
+    values:
+      - values/traefik.yaml
+
+  - name: cert-manager
+    namespace: cert-manager
+    createNamespace: true
+    chart: jetstack/cert-manager
+    version: v1.21.0
+    labels:
+      profile: core
+    values:
+      - values/cert-manager.yaml
+
+  - name: alloy
+    namespace: observability
+    createNamespace: true
+    chart: grafana/alloy
+    version: 1.10.1
+    labels:
+      profile: core
+    values:
+      - values/alloy.yaml
+
+  - name: kube-state-metrics
+    namespace: observability
+    createNamespace: true
+    chart: prometheus-community/kube-state-metrics
+    version: 8.0.0
+    labels:
+      profile: core
+    values:
+      - values/kube-state-metrics.yaml
+
+  - name: prometheus-node-exporter
+    namespace: observability
+    createNamespace: true
+    chart: prometheus-community/prometheus-node-exporter
+    version: 4.56.1
+    labels:
+      profile: core
+    values:
+      - values/node-exporter.yaml
+
+  - name: cloudnative-pg
+    namespace: cnpg-system
+    createNamespace: true
+    chart: cnpg/cloudnative-pg
+    version: 0.29.0
+    labels:
+      profile: core
+    values:
+      - values/cloudnative-pg.yaml
+
+  - name: strimzi
+    namespace: kafka-system
+    createNamespace: true
+    chart: strimzi/strimzi-kafka-operator
+    version: 1.1.0
+    labels:
+      profile: full
+    values:
+      - values/strimzi.yaml
+
+  - name: gatekeeper
+    namespace: gatekeeper-system
+    createNamespace: true
+    chart: gatekeeper/gatekeeper
+    version: 3.23.0
+    labels:
+      profile: full
+    values:
+      - values/gatekeeper.yaml

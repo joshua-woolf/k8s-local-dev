@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dashboard
+  labels:
+    {{- include "dashboard.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/cluster-issuer: local-dev-ca
+    localdev.dashboard/enabled: "true"
+    localdev.dashboard/name: Dashboard
+    localdev.dashboard/category: Applications
+    localdev.dashboard/description: Local cluster services and readiness
+    localdev.dashboard/credentials: none
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: {{ .Values.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dashboard
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - {{ .Values.host | quote }}
+      secretName: {{ .Values.tls.secretName | quote }}

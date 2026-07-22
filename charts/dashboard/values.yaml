@@ -1,1 +1,29 @@
-imageTag: v1
+replicaCount: 1
+
+image:
+  repository: local/dashboard
+  tag: dev
+  pullPolicy: IfNotPresent
+
+host: dashboard.k8s.localhost
+
+tls:
+  secretName: dashboard-tls
+
+otelEndpoint: http://alloy.observability.svc.cluster.local:4318
+
+credentials:
+  namespace: data
+  secretNames:
+    - clickhouse-credentials
+    - pgadmin-credentials
+    - postgres-app
+    - valkey-credentials
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi

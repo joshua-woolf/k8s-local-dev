@@ -132,6 +132,14 @@ zsdoc/data
 
 # End of https://www.toptal.com/developers/gitignore/api/git,helm,linux,macos,powershell,visualstudiocode,zsh
 
+# Local cluster state. This contains the development CA private key.
+.state/
+
+# Rendered Kubernetes resources and test artefacts.
+.rendered/
+playwright-report/
+test-results/
+
 # Created by https://www.toptal.com/developers/gitignore/api/node
 # Edit at https://www.toptal.com/developers/gitignore?templates=node
 

@@ -8,9 +8,11 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - secrets
+      - services
     verbs:
       - get
+      - list
+      - watch
   - apiGroups:
       - networking.k8s.io
     resources:
@@ -20,9 +22,9 @@ rules:
       - list
       - watch
   - apiGroups:
-      - traefik.containo.us
+      - discovery.k8s.io
     resources:
-      - ingressroutes
+      - endpointslices
     verbs:
       - get
       - list

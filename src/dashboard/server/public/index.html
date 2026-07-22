@@ -1,107 +1,53 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Local Development Dashboard - View all Ingress and IngressRoute resources in your cluster">
-  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
-  <title>Local Dev Dashboard</title>
-  <script>
-    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-
-    window.toggleTheme = () => {
-      document.documentElement.classList.add('changing-theme');
-
-      if (document.documentElement.classList.contains('dark')) {
-        document.documentElement.classList.remove('dark');
-        localStorage.theme = 'light';
-      } else {
-        document.documentElement.classList.add('dark');
-        localStorage.theme = 'dark';
-      }
-
-      requestAnimationFrame(() => {
-        document.documentElement.classList.remove('changing-theme');
-      });
-    };
-  </script>
-  <link href="/styles.dist.css" rel="stylesheet">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%234A5568' d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z'/%3E%3C/svg%3E">
-</head>
-<body class="bg-gray-100 dark:bg-gray-900 min-h-screen text-gray-900 dark:text-gray-100 antialiased">
-  <div class="container mx-auto px-4 py-8">
-    <header class="mb-8">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-700 dark:text-gray-300">Local Dev Environment</h1>
-        <div class="flex items-center space-x-4">
-          <button
-            id="refresh-button"
-            class="p-2 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-300"
-            aria-label="Refresh routes"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
-          <button
-            id="theme-toggle"
-            class="p-2 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-gray-300"
-            aria-label="Toggle theme"
-            onclick="toggleTheme()"
-          >
-            <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
-            </svg>
-            <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"></path>
-            </svg>
-          </button>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Local Kubernetes services and readiness">
+    <meta name="color-scheme" content="light dark">
+    <title>Local Kubernetes</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/script.js" defer></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div>
+          <div class="eyebrow">KIND · LOCAL-DEV</div>
+          <h1>Cluster services</h1>
+          <p class="hero-copy">One place for local URLs, readiness, and data-service connections.</p>
         </div>
-      </div>
-      <div class="relative w-full sm:w-96">
-        <input
-          type="search"
-          id="route-search"
-          class="w-full px-4 py-2 pl-10 pr-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Search applications..."
-          aria-label="Search applications"
-        >
-        <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-      </div>
-    </header>
-
-    <main>
-      <div id="no-results" class="hidden text-center py-8 text-gray-700 dark:text-gray-300">
-        No applications found matching your search.
-      </div>
-
-      <div class="grid grid-cols-1 gap-6" id="routes-container" role="list" aria-label="Routes">
-        <!-- Routes will be dynamically inserted here -->
-      </div>
-
-      <div id="loading" class="text-center py-8" role="status" aria-label="Loading routes">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 dark:border-blue-400 mx-auto"></div>
-        <span class="sr-only">Loading...</span>
-      </div>
-
-      <div id="error" class="hidden text-center py-8">
-        <div class="inline-flex items-center px-4 py-2 rounded-lg bg-red-100 dark:bg-red-900/50">
-          <svg class="w-5 h-5 text-red-500 dark:text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span class="text-red-600 dark:text-red-300">Error loading routes. Please try again later.</span>
+        <div class="hero-actions">
+          <button id="refresh-button" class="button" type="button">Refresh</button>
+          <button id="theme-toggle" class="button button-icon" type="button" aria-label="Toggle colour theme">◐</button>
         </div>
-      </div>
-    </main>
-  </div>
+      </header>
 
-  <script src="script.js" defer></script>
-</body>
+      <section class="toolbar" aria-label="Dashboard controls">
+        <label class="search-field" for="service-search">
+          <span>Search</span>
+          <input id="service-search" type="search" placeholder="Service, namespace, or endpoint">
+        </label>
+        <div class="summary" aria-live="polite">
+          <span><strong id="service-count">0</strong> services</span>
+          <span class="summary-ready"><strong id="ready-count">0</strong> ready</span>
+          <span class="last-updated" id="last-updated">Not refreshed</span>
+        </div>
+      </section>
+
+      <main>
+        <div id="loading" class="state-panel" role="status">Reading the cluster…</div>
+        <div id="error" class="state-panel state-error" hidden>
+          <strong>Could not read cluster services.</strong>
+          <span id="error-message">Try refreshing in a moment.</span>
+        </div>
+        <div id="empty" class="state-panel" hidden>No matching services.</div>
+        <div id="services-container" class="service-groups" aria-live="polite"></div>
+      </main>
+
+      <footer>
+        Only resources annotated with <code>localdev.dashboard/enabled: "true"</code> appear here.
+      </footer>
+    </div>
+  </body>
 </html>

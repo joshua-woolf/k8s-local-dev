@@ -1,0 +1,22 @@
+prometheusScrape: true
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: /metrics
+
+metricLabelsAllowlist:
+  - namespaces=[kubernetes.io/metadata.name]
+  - deployments=[app.kubernetes.io/name]
+  - statefulsets=[app.kubernetes.io/name]
+  - daemonsets=[app.kubernetes.io/name]
+  - horizontalpodautoscalers=[app.kubernetes.io/name]
+  - networkpolicies=[app.kubernetes.io/name]
+
+resources:
+  requests:
+    cpu: 30m
+    memory: 64Mi
+  limits:
+    cpu: 300m
+    memory: 256Mi
