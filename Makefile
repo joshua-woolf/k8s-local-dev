@@ -76,6 +76,8 @@ core-resources: ## Reconcile observability, Postgres, and pgAdmin resources
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/namespaces.yaml
 	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-data-secrets.sh
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/observability/
+	@kubectl --context "$(KUBE_CONTEXT)" --namespace observability rollout restart deployment/otel-lgtm
+	@kubectl --context "$(KUBE_CONTEXT)" --namespace observability rollout status deployment/otel-lgtm --timeout=300s
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/postgres/
 
 valkey-admin-image: cluster ## Build and load Valkey Admin with the local instance preconfigured

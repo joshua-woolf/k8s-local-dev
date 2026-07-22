@@ -70,12 +70,25 @@ spec:
               mountPath: /data
             - name: loki-runtime
               mountPath: /loki
+            - name: grafana-dashboard-provider
+              mountPath: /otel-lgtm/grafana/conf/provisioning/dashboards/local-dev.yaml
+              subPath: local-dev.yaml
+              readOnly: true
+            - name: grafana-dashboards
+              mountPath: /otel-lgtm/grafana/dashboards/local-dev
+              readOnly: true
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: otel-lgtm-data
         - name: loki-runtime
           emptyDir: {}
+        - name: grafana-dashboard-provider
+          configMap:
+            name: grafana-dashboard-provider
+        - name: grafana-dashboards
+          configMap:
+            name: grafana-dashboards
 ---
 apiVersion: v1
 kind: Service

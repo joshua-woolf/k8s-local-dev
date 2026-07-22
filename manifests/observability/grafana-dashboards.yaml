@@ -1,0 +1,141 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: observability
+data:
+  local-dev.yaml: |
+    apiVersion: 1
+    providers:
+      - name: local-dev
+        orgId: 1
+        folder: Local development
+        folderUid: local-development
+        type: file
+        disableDeletion: true
+        editable: false
+        updateIntervalSeconds: 10
+        options:
+          path: /otel-lgtm/grafana/dashboards/local-dev
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: observability
+data:
+  kubernetes.json: |-
+    {
+      "annotations":{"list":[]},"editable":false,"graphTooltip":1,"links":[],"refresh":"30s","schemaVersion":41,"tags":["local-dev","kubernetes"],"time":{"from":"now-1h","to":"now"},"timezone":"browser","title":"Kubernetes Overview","uid":"localdev-kubernetes","version":1,
+      "panels":[
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":0,"y":0},"id":1,"targets":[{"expr":"sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"})","refId":"A"}],"title":"Ready nodes","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":6,"y":0},"id":2,"targets":[{"expr":"sum(kube_pod_status_phase{phase=\"Running\"})","refId":"A"}],"title":"Running pods","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":12,"y":0},"id":3,"targets":[{"expr":"sum(increase(kube_pod_container_status_restarts_total[1h]))","refId":"A"}],"title":"Restarts (1h)","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":18,"y":0},"id":4,"targets":[{"expr":"sum(kube_pod_status_phase{phase=~\"Pending|Failed|Unknown\"})","refId":"A"}],"title":"Unhealthy pods","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":12,"x":0,"y":5},"id":5,"targets":[{"expr":"sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=\"\",image!=\"\"}[5m]))","legendFormat":"{{namespace}}","refId":"A"}],"title":"CPU by namespace","type":"timeseries"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":12,"x":12,"y":5},"id":6,"targets":[{"expr":"sum by (namespace) (container_memory_working_set_bytes{container!=\"\",image!=\"\"})","legendFormat":"{{namespace}}","refId":"A"}],"title":"Working-set memory by namespace","type":"timeseries"}
+      ]
+    }
+  observability.json: |-
+    {
+      "annotations":{"list":[]},"editable":false,"graphTooltip":1,"links":[],"refresh":"30s","schemaVersion":41,"tags":["local-dev","lgtm","alloy"],"time":{"from":"now-1h","to":"now"},"timezone":"browser","title":"Observability Stack","uid":"localdev-observability","version":1,
+      "panels":[
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":6,"w":8,"x":0,"y":0},"id":1,"targets":[{"expr":"max by (job) (up{job=~\"alloy|grafana|loki|tempo|pyroscope|prometheus\"})","legendFormat":"{{job}}","refId":"A"}],"title":"Components up","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":6,"w":8,"x":8,"y":0},"id":2,"targets":[{"expr":"alloy_config_last_load_successful","refId":"A"}],"title":"Alloy config valid","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":6,"w":8,"x":16,"y":0},"id":3,"targets":[{"expr":"sum(grafana_alerting_active_alerts)","refId":"A"}],"title":"Active Grafana alerts","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":12,"x":0,"y":6},"id":4,"targets":[{"expr":"sum by (job) (rate(process_cpu_seconds_total{job=~\"grafana|loki|tempo|pyroscope|prometheus\"}[5m]))","legendFormat":"{{job}}","refId":"A"}],"title":"Component CPU","type":"timeseries"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":12,"x":12,"y":6},"id":5,"targets":[{"expr":"sum by (job) (process_resident_memory_bytes{job=~\"grafana|loki|tempo|pyroscope|prometheus\"})","legendFormat":"{{job}}","refId":"A"}],"title":"Component memory","type":"timeseries"}
+      ]
+    }
+  traefik.json: |-
+    {
+      "annotations":{"list":[]},"editable":false,"graphTooltip":1,"links":[],"refresh":"30s","schemaVersion":41,"tags":["local-dev","traefik"],"time":{"from":"now-1h","to":"now"},"timezone":"browser","title":"Traefik","uid":"localdev-traefik","version":1,
+      "panels":[
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":0,"y":0},"id":1,"targets":[{"expr":"max(up{job=\"traefik\"})","refId":"A"}],"title":"Up","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":6,"y":0},"id":2,"targets":[{"expr":"sum(rate(traefik_service_requests_total[5m]))","refId":"A"}],"title":"Requests / second","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":12,"y":0},"id":3,"targets":[{"expr":"sum(traefik_open_connections)","refId":"A"}],"title":"Open connections","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":18,"y":0},"id":4,"targets":[{"expr":"traefik_config_last_reload_success","refId":"A"}],"title":"Config reload healthy","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":12,"x":0,"y":5},"id":5,"targets":[{"expr":"sum by (service) (rate(traefik_service_requests_total[5m]))","legendFormat":"{{service}}","refId":"A"}],"title":"Traffic by service","type":"timeseries"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":12,"x":12,"y":5},"id":6,"targets":[{"expr":"histogram_quantile(0.95, sum by (le) (rate(traefik_service_request_duration_seconds_bucket[5m])))","refId":"A"}],"title":"p95 service latency","type":"timeseries"}
+      ]
+    }
+  cert-manager.json: |-
+    {
+      "annotations":{"list":[]},"editable":false,"graphTooltip":1,"links":[],"refresh":"30s","schemaVersion":41,"tags":["local-dev","cert-manager"],"time":{"from":"now-6h","to":"now"},"timezone":"browser","title":"cert-manager","uid":"localdev-cert-manager","version":1,
+      "panels":[
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":8,"x":0,"y":0},"id":1,"targets":[{"expr":"min(up{namespace=\"cert-manager\"})","refId":"A"}],"title":"Components up","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":8,"x":8,"y":0},"id":2,"targets":[{"expr":"sum(certmanager_certificate_ready_status{condition=\"True\"})","refId":"A"}],"title":"Ready certificates","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":8,"x":16,"y":0},"id":3,"targets":[{"expr":"min(certmanager_certificate_expiration_timestamp_seconds - time()) / 86400","refId":"A"}],"title":"Nearest expiry (days)","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":24,"x":0,"y":5},"id":4,"targets":[{"expr":"(certmanager_certificate_expiration_timestamp_seconds - time()) / 86400","legendFormat":"{{namespace}} / {{name}}","refId":"A"}],"title":"Certificate lifetime remaining","type":"timeseries"}
+      ]
+    }
+  gatekeeper.json: |-
+    {
+      "annotations":{"list":[]},"editable":false,"graphTooltip":1,"links":[],"refresh":"30s","schemaVersion":41,"tags":["local-dev","gatekeeper"],"time":{"from":"now-6h","to":"now"},"timezone":"browser","title":"Gatekeeper","uid":"localdev-gatekeeper","version":1,
+      "panels":[
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":0,"y":0},"id":1,"targets":[{"expr":"min(up{job=\"gatekeeper\"})","refId":"A"}],"title":"Components up","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":6,"y":0},"id":2,"targets":[{"expr":"sum(gatekeeper_violations)","refId":"A"}],"title":"Current violations","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":12,"y":0},"id":3,"targets":[{"expr":"sum(gatekeeper_constraints)","refId":"A"}],"title":"Constraints","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":18,"y":0},"id":4,"targets":[{"expr":"time() - max(gatekeeper_audit_last_run_end_time)","refId":"A"}],"title":"Seconds since audit","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":24,"x":0,"y":5},"id":5,"targets":[{"expr":"sum by (enforcement_action) (gatekeeper_violations)","legendFormat":"{{enforcement_action}}","refId":"A"}],"title":"Violations by enforcement action","type":"timeseries"}
+      ]
+    }
+  postgres.json: |-
+    {
+      "annotations":{"list":[]},"editable":false,"graphTooltip":1,"links":[],"refresh":"30s","schemaVersion":41,"tags":["local-dev","postgresql"],"time":{"from":"now-1h","to":"now"},"timezone":"browser","title":"PostgreSQL","uid":"localdev-postgres","version":1,
+      "panels":[
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":0,"y":0},"id":1,"targets":[{"expr":"max(cnpg_collector_up)","refId":"A"}],"title":"Collector up","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":6,"y":0},"id":2,"targets":[{"expr":"sum(cnpg_pg_database_size_bytes{datname=\"app\"})","refId":"A"}],"title":"App database bytes","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":12,"y":0},"id":3,"targets":[{"expr":"sum(cnpg_backends_total)","refId":"A"}],"title":"Backends","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":18,"y":0},"id":4,"targets":[{"expr":"sum(cnpg_backends_waiting_total)","refId":"A"}],"title":"Waiting backends","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":12,"x":0,"y":5},"id":5,"targets":[{"expr":"sum(rate(cnpg_pg_stat_database_xact_commit{datname=\"app\"}[5m]))","refId":"A"}],"title":"Transactions / second","type":"timeseries"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":12,"x":12,"y":5},"id":6,"targets":[{"expr":"sum(cnpg_pg_stat_database_blks_hit{datname=\"app\"}) / clamp_min(sum(cnpg_pg_stat_database_blks_hit{datname=\"app\"} + cnpg_pg_stat_database_blks_read{datname=\"app\"}), 1)","refId":"A"}],"title":"Cache hit ratio","type":"timeseries"}
+      ]
+    }
+  clickhouse.json: |-
+    {
+      "annotations":{"list":[]},"editable":false,"graphTooltip":1,"links":[],"refresh":"30s","schemaVersion":41,"tags":["local-dev","clickhouse"],"time":{"from":"now-1h","to":"now"},"timezone":"browser","title":"ClickHouse","uid":"localdev-clickhouse","version":1,
+      "panels":[
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":0,"y":0},"id":1,"targets":[{"expr":"max(up{job=\"clickhouse\"})","refId":"A"}],"title":"Up","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":6,"y":0},"id":2,"targets":[{"expr":"max(ClickHouseMetrics_Query)","refId":"A"}],"title":"Active queries","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":12,"y":0},"id":3,"targets":[{"expr":"max(ClickHouseAsyncMetrics_NumberOfDatabases)","refId":"A"}],"title":"Databases","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":18,"y":0},"id":4,"targets":[{"expr":"max(ClickHouseAsyncMetrics_NumberOfTables)","refId":"A"}],"title":"Tables","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":12,"x":0,"y":5},"id":5,"targets":[{"expr":"rate(ClickHouseProfileEvents_Query[5m])","refId":"A"}],"title":"Queries / second","type":"timeseries"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":12,"x":12,"y":5},"id":6,"targets":[{"expr":"ClickHouseAsyncMetrics_MemoryResident","refId":"A"},{"expr":"ClickHouseMetrics_MemoryTracking","refId":"B"}],"title":"Resident and tracked memory","type":"timeseries"}
+      ]
+    }
+  kafka.json: |-
+    {
+      "annotations":{"list":[]},"editable":false,"graphTooltip":1,"links":[],"refresh":"30s","schemaVersion":41,"tags":["local-dev","kafka"],"time":{"from":"now-1h","to":"now"},"timezone":"browser","title":"Kafka","uid":"localdev-kafka","version":1,
+      "panels":[
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":0,"y":0},"id":1,"targets":[{"expr":"max(up{job=\"kafka\"})","refId":"A"}],"title":"Up","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":6,"y":0},"id":2,"targets":[{"expr":"max(kafka_controller_kafkacontroller_activebrokercount)","refId":"A"}],"title":"Active brokers","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":12,"y":0},"id":3,"targets":[{"expr":"max(kafka_controller_kafkacontroller_globaltopiccount)","refId":"A"}],"title":"Topics","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":18,"y":0},"id":4,"targets":[{"expr":"max(kafka_server_replicamanager_underreplicatedpartitions)","refId":"A"}],"title":"Under-replicated partitions","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":12,"x":0,"y":5},"id":5,"targets":[{"expr":"sum(rate(kafka_server_brokertopicmetrics_messagesin_total[5m]))","refId":"A"}],"title":"Messages in / second","type":"timeseries"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":12,"x":12,"y":5},"id":6,"targets":[{"expr":"sum(rate(kafka_server_brokertopicmetrics_bytesin_total[5m]))","legendFormat":"in","refId":"A"},{"expr":"sum(rate(kafka_server_brokertopicmetrics_bytesout_total[5m]))","legendFormat":"out","refId":"B"}],"title":"Broker bytes / second","type":"timeseries"}
+      ]
+    }
+  valkey.json: |-
+    {
+      "annotations":{"list":[]},"editable":false,"graphTooltip":1,"links":[],"refresh":"30s","schemaVersion":41,"tags":["local-dev","valkey"],"time":{"from":"now-1h","to":"now"},"timezone":"browser","title":"Valkey","uid":"localdev-valkey","version":1,
+      "panels":[
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":0,"y":0},"id":1,"targets":[{"expr":"max(redis_up)","refId":"A"}],"title":"Up","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":6,"y":0},"id":2,"targets":[{"expr":"max(redis_connected_clients)","refId":"A"}],"title":"Clients","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":12,"y":0},"id":3,"targets":[{"expr":"sum(redis_db_keys)","refId":"A"}],"title":"Keys","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":6,"x":18,"y":0},"id":4,"targets":[{"expr":"max(redis_memory_used_bytes)","refId":"A"}],"title":"Memory used","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":12,"x":0,"y":5},"id":5,"targets":[{"expr":"rate(redis_commands_processed_total[5m])","refId":"A"}],"title":"Commands / second","type":"timeseries"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":12,"x":12,"y":5},"id":6,"targets":[{"expr":"rate(redis_keyspace_hits_total[5m]) / clamp_min(rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]), 0.001)","refId":"A"}],"title":"Keyspace hit ratio","type":"timeseries"}
+      ]
+    }
+  applications.json: |-
+    {
+      "annotations":{"list":[]},"editable":false,"graphTooltip":1,"links":[],"refresh":"30s","schemaVersion":41,"tags":["local-dev","applications"],"time":{"from":"now-1h","to":"now"},"timezone":"browser","title":"Local Applications","uid":"localdev-applications","version":1,
+      "panels":[
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":8,"x":0,"y":0},"id":1,"targets":[{"expr":"sum(rate(http_server_requests_seconds_count{namespace=\"data\"}[5m]))","refId":"A"}],"title":"Kafbat requests / second","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":8,"x":8,"y":0},"id":2,"targets":[{"expr":"sum(rate(http_server_duration_milliseconds_count{service_name=\"dashboard\"}[5m]))","refId":"A"}],"title":"Dashboard requests / second","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":5,"w":8,"x":16,"y":0},"id":3,"targets":[{"expr":"sum(increase(kube_pod_container_status_restarts_total{namespace=~\"data|dashboard\",container=~\"pgadmin|kafbat|valkey-admin|dashboard\"}[1h]))","refId":"A"}],"title":"Application restarts (1h)","type":"stat"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":12,"x":0,"y":5},"id":4,"targets":[{"expr":"sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=~\"data|dashboard\",pod=~\"pgadmin-.*|kafbat-.*|valkey-admin-.*|dashboard-.*\",container!=\"\"}[5m]))","legendFormat":"{{pod}}","refId":"A"}],"title":"Application CPU","type":"timeseries"},
+        {"datasource":{"type":"prometheus","uid":"prometheus"},"gridPos":{"h":8,"w":12,"x":12,"y":5},"id":5,"targets":[{"expr":"sum by (pod) (container_memory_working_set_bytes{namespace=~\"data|dashboard\",pod=~\"pgadmin-.*|kafbat-.*|valkey-admin-.*|dashboard-.*\",container!=\"\"})","legendFormat":"{{pod}}","refId":"A"}],"title":"Application memory","type":"timeseries"}
+      ]
+    }
