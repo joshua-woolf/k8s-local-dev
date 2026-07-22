@@ -111,6 +111,7 @@ This deletes every PVC in that local cluster.
 | `make up-core` | Reconcile the lightweight profile |
 | `make up` | Reconcile the full profile |
 | `make dashboard` | Rebuild, load, and redeploy the dashboard |
+| `make valkey-admin-image` | Build and load the preconfigured Valkey Admin image |
 | `make load IMAGE=example/app:dev` | Load another local image into Kind |
 | `make ports` | Print data-service host endpoints |
 | `make credentials` | Print generated UI and data-service credentials |
@@ -200,8 +201,10 @@ pgAdmin uses the generated login at `https://pgadmin.k8s.localhost`. The
 `Local PostgreSQL` server is preloaded with the `app` database and retrieves its
 password from CloudNativePG's `postgres-app` Secret. Kafbat requires no login in
 this loopback-only setup and connects to Kafka through the internal listener.
-Valkey Admin requires no separate UI login and receives its preconfigured
-connection from the generated `valkey-credentials` Secret.
+Valkey Admin requires no separate UI login. A small image derivative adds the
+`Local Valkey` connection at build time, while its server reads the generated
+`valkey-credentials` Secret at runtime so the password is never included in
+browser JavaScript. A fresh browser opens directly on the connected instance.
 
 PostgreSQL clients connect to `postgres.k8s.localhost:5432`. ClickHouse clients
 can use HTTPS on port 443, plain HTTP on 8123, or the native protocol on 9000.

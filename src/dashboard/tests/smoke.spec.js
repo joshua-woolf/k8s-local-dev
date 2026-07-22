@@ -32,3 +32,11 @@ test('dashboard shows data tools and host database endpoints', async ({ page }) 
     await expect(page.getByText(endpoint, { exact: true })).toBeVisible()
   }
 })
+
+test('Valkey Admin automatically connects to the local instance', async ({ page }) => {
+  await page.goto('https://valkey-ui.k8s.localhost')
+
+  await expect(page.getByText('Local Valkey', { exact: true })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText(/Metrics, CPU and Memory Usage for instance/)).toBeVisible()
+  await expect(page.getByText('You Have No Connections!')).toHaveCount(0)
+})
