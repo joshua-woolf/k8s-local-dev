@@ -1,0 +1,88 @@
+{
+  "dashboards": [
+    {
+      "name": "Kubernetes Views Global",
+      "file": "kubernetes/kubernetes-global.json",
+      "source": "https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/v3.0.6/dashboards/k8s-views-global.json",
+      "revision": "v3.0.6",
+      "sha256": "b8f463567328e906040f19687f2acac3cc326eec04e5cd330805975d19d5ef82"
+    },
+    {
+      "name": "Kubernetes Views Namespaces",
+      "file": "kubernetes/kubernetes-namespaces.json",
+      "source": "https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/v3.0.6/dashboards/k8s-views-namespaces.json",
+      "revision": "v3.0.6",
+      "sha256": "76c9d6746046df196ab0a0f5428a6538f3b985602ad2f36b7a7dada620c0fb14"
+    },
+    {
+      "name": "Kubernetes Views Nodes",
+      "file": "kubernetes/kubernetes-nodes.json",
+      "source": "https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/v3.0.6/dashboards/k8s-views-nodes.json",
+      "revision": "v3.0.6",
+      "sha256": "e1351538102d041daca17005de806d3b9b21a4b4ca358c86f1de6de54604f195"
+    },
+    {
+      "name": "Kubernetes Views Pods",
+      "file": "kubernetes/kubernetes-pods.json",
+      "source": "https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/v3.0.6/dashboards/k8s-views-pods.json",
+      "revision": "v3.0.6",
+      "sha256": "ea1410e8f44425087edfe9180e90a1baf14c672b220b15e103be067cdd7afc04"
+    },
+    {
+      "name": "CloudNativePG",
+      "file": "data/postgres-cloudnativepg.json",
+      "source": "https://raw.githubusercontent.com/cloudnative-pg/grafana-dashboards/cluster-v0.0.5/charts/cluster/grafana-dashboard.json",
+      "revision": "cluster-v0.0.5",
+      "sha256": "530896710a8923e721e69f283fd0030e1ba6f0f3239d83e6977e34ad89ced16c"
+    },
+    {
+      "name": "Strimzi Kafka",
+      "file": "data/strimzi-kafka.json",
+      "source": "https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/1.1.0/examples/metrics/grafana-dashboards/strimzi-kafka.json",
+      "revision": "1.1.0",
+      "sha256": "b120cc722e58a289c84ecb2f74129ab58a9413bf03b2bff12a5b792a64da9de8"
+    },
+    {
+      "name": "Strimzi KRaft",
+      "file": "data/kafka-kraft.json",
+      "source": "https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/1.1.0/examples/metrics/grafana-dashboards/strimzi-kraft.json",
+      "revision": "1.1.0",
+      "sha256": "d4e6b5d7be7ac0427fce8148b959340be146691805e03ef8f751a029d62f3738"
+    },
+    {
+      "name": "Strimzi Operators",
+      "file": "platform/strimzi-operators.json",
+      "source": "https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/1.1.0/examples/metrics/grafana-dashboards/strimzi-operators.json",
+      "revision": "1.1.0",
+      "sha256": "3747474e5857be90a266db24e8e382f8a55f59d1d5757ae8506711dbb9fe1b09"
+    },
+    {
+      "name": "Traefik Official Kubernetes Dashboard",
+      "file": "platform/traefik-official.json",
+      "source": "https://raw.githubusercontent.com/traefik/traefik/v3.7.6/contrib/grafana/traefik-kubernetes.json",
+      "revision": "v3.7.6",
+      "sha256": "74abca61953364a5ef898781155c23c610304ec9af2d69729042137202ad0f22"
+    },
+    {
+      "name": "Redis Exporter",
+      "file": "data/valkey-redis-exporter.json",
+      "source": "https://raw.githubusercontent.com/oliver006/redis_exporter/v1.87.0/contrib/grafana_prometheus_redis_dashboard.json",
+      "revision": "v1.87.0",
+      "sha256": "a7aee4d5764d6b1ea86bec5aebde7e568668f2304472b85e81df52034443f705"
+    },
+    {
+      "name": "ClickHouse Prometheus Exporter",
+      "file": "data/clickhouse-mixin.json",
+      "source": "https://raw.githubusercontent.com/ClickHouse/clickhouse-mixin/46e0587a3565acb9186e2ca31870aa4488a783f0/dashboard_byoc.json",
+      "revision": "46e0587a3565acb9186e2ca31870aa4488a783f0",
+      "sha256": "75a34497f17208146038d6c807c0c4a8c39cc5d2f77e7635c5793e01aabe7a3c"
+    },
+    {
+      "name": "cert-manager",
+      "file": "platform/cert-manager-community.json",
+      "source": "https://grafana.com/api/dashboards/20340/revisions/1/download",
+      "revision": "Grafana 20340 revision 1",
+      "sha256": "5045ceac9ce728ecc74ae7bd871ad1b6cf1a7b9a6c517e54ab35a2c2d9b857d2"
+    }
+  ]
+}

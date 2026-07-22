@@ -87,8 +87,16 @@ spec:
           configMap:
             name: grafana-dashboard-provider
         - name: grafana-dashboards
-          configMap:
-            name: grafana-dashboards
+          projected:
+            sources:
+              - configMap:
+                  name: grafana-dashboards-custom
+              - configMap:
+                  name: grafana-dashboards-kubernetes
+              - configMap:
+                  name: grafana-dashboards-platform
+              - configMap:
+                  name: grafana-dashboards-data
 ---
 apiVersion: v1
 kind: Service

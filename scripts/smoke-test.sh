@@ -35,16 +35,22 @@ test "$(curl --fail --silent --show-error --cacert "${ca_file}" \
 grafana_dashboards="$(curl --fail --silent --show-error --cacert "${ca_file}" \
   'https://grafana.k8s.localhost/api/search?tag=local-dev')"
 for dashboard_uid in \
+  31545fecf446bf88 \
+  7ddce8bf9ea7ddb5 \
+  ce2e96276hjpcd1 \
+  cert-manager \
+  cloudnative-pg \
+  d1b98e4d984de29d \
+  e008bc3f-81a2-40f9-baf2-a33fd8dec7ec \
+  k8s_views_global \
+  k8s_views_nodes \
+  k8s_views_ns \
+  k8s_views_pods \
   localdev-applications \
-  localdev-cert-manager \
-  localdev-clickhouse \
   localdev-gatekeeper \
-  localdev-kafka \
-  localdev-kubernetes \
   localdev-observability \
-  localdev-postgres \
-  localdev-traefik \
-  localdev-valkey; do
+  localdev-overview \
+  n5bu_kv4k; do
   test "$(jq --arg uid "${dashboard_uid}" '[.[] | select(.uid == $uid)] | length' <<<"${grafana_dashboards}")" = "1"
 done
 
@@ -69,6 +75,7 @@ for metrics_job in \
   loki \
   postgresql \
   prometheus \
+  prometheus-node-exporter \
   pyroscope \
   tempo \
   traefik \

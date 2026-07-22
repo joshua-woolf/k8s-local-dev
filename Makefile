@@ -75,6 +75,7 @@ untrust: ## Remove this repository's CA from the host trust stores
 core-resources: ## Reconcile observability, Postgres, and pgAdmin resources
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/namespaces.yaml
 	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-data-secrets.sh
+	@CLUSTER_NAME="$(CLUSTER_NAME)" KUBE_CONTEXT="$(KUBE_CONTEXT)" ./scripts/sync-grafana-dashboards.sh
 	@kubectl --context "$(KUBE_CONTEXT)" apply --filename manifests/observability/
 	@kubectl --context "$(KUBE_CONTEXT)" --namespace observability rollout restart deployment/otel-lgtm
 	@kubectl --context "$(KUBE_CONTEXT)" --namespace observability rollout status deployment/otel-lgtm --timeout=300s
@@ -148,6 +149,7 @@ validate: ## Render and validate charts, manifests, scripts, and dashboard code
 	@find manifests -name '*.yaml' -print0 | xargs -0 kubeconform -strict -ignore-missing-schemas -summary
 	@kubeconform -strict -ignore-missing-schemas -summary .rendered/platform.yaml .rendered/dashboard.yaml
 	@shellcheck scripts/*.sh
+	@./scripts/verify-grafana-dashboards.sh
 	@$(MAKE) --no-print-directory test
 
 smoke: require-ca ## Run cluster and browser smoke tests

@@ -12,7 +12,7 @@ The core profile contains:
 - Traefik for standard Kubernetes `Ingress` resources
 - cert-manager with a repository-local development CA
 - Grafana Alloy for pod logs, annotated Prometheus metrics, and OTLP
-- kube-state-metrics plus kubelet/cAdvisor metrics for Kubernetes workload state and resources
+- kube-state-metrics, node-exporter, and kubelet/cAdvisor metrics for Kubernetes workload state and resources
 - `grafana/otel-lgtm` with Grafana, Loki, Tempo, Prometheus, and Pyroscope
 - CloudNativePG with one PostgreSQL instance
 - pgAdmin with the local PostgreSQL connection preconfigured
@@ -167,12 +167,13 @@ data service. pgAdmin and Valkey Admin do not publish useful Prometheus
 application metrics, so their CPU, memory, restarts, and logs come from
 Kubernetes instead. Kafbat additionally publishes its Spring metrics.
 
-Grafana provisions a `Local development` folder containing dashboards for
-Kubernetes, the observability stack, Traefik, cert-manager, Gatekeeper,
-PostgreSQL, ClickHouse, Kafka, Valkey, and the local admin/dashboard apps. The
-dashboard JSON is stored in
-`manifests/observability/grafana-dashboards.yaml`, so recreating the cluster
-does not lose dashboard definitions.
+Grafana provisions a `Local development` folder containing pinned community or
+official dashboards for Kubernetes, Traefik, cert-manager, CloudNativePG,
+ClickHouse, Strimzi Kafka, and Valkey. Small local dashboards remain for the
+overview, the observability pipeline, Gatekeeper, and the admin/dashboard apps.
+The vendored JSON, exact upstream revisions, local compatibility notes, and
+checksums live in `manifests/observability/dashboards`, so recreating the cluster
+is deterministic and does not require an internet connection at deploy time.
 
 ## Dashboard discovery and credentials
 

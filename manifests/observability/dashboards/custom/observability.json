@@ -1,0 +1,137 @@
+{
+  "annotations": {
+    "list": [
+
+    ]
+  },
+  "editable": false,
+  "graphTooltip": 1,
+  "links": [
+
+  ],
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "tags": [
+    "local-dev",
+    "lgtm",
+    "alloy"
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Observability Stack",
+  "uid": "localdev-observability",
+  "version": 1,
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "targets": [
+        {
+          "expr": "max by (job) (up{job=~\"alloy|grafana|loki|tempo|pyroscope|prometheus\"})",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Components up",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 0
+      },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "alloy_config_last_load_successful",
+          "refId": "A"
+        }
+      ],
+      "title": "Alloy config valid",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "sum(grafana_alerting_active_alerts)",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Grafana alerts",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "sum by (job) (rate(process_cpu_seconds_total{job=~\"grafana|loki|tempo|pyroscope|prometheus\"}[5m]))",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Component CPU",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "sum by (job) (process_resident_memory_bytes{job=~\"grafana|loki|tempo|pyroscope|prometheus\"})",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Component memory",
+      "type": "timeseries"
+    }
+  ]
+}
